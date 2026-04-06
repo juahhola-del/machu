@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Machu Intelligence</title>
+<script type="module">
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+const SUPABASE_URL = "https://klmikzfstasntvgmxsuj.supabase.co";
+const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
+
+const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// ---------- ESTADO EN VIVO ----------
+async function cargarEstado() {
+  const { data } = await supabase.from("v_home_live_status").select("*").limit(1);
+  const s = data?.[0];
+  if (!s) return;
+
+  document.getElementById("estado").innerHTML = `
+    Turnos entregados: ${s.turnos_entregados}<br>
+    Disponibles: ${s.turnos_disponibles}<br>
+    Fila: ${s.fila_estimada}<br>
+    Huayna: ${s.etiqueta_huayna}
+  `;
+}
+
+// ---------- RUTAS ----------
+async function cargarRutas() {
+  const { data } = await supabase.from("v_home_routes_live").select("*");
+  let html = "";
+
+  data.forEach(r => {
+    html += `
+      <div style="margin-bottom:10px;">
+        <b>${r.route_name}</b><br>
+        Disponibles: ${r.disponibles}<br>
+        Riesgo: ${r.riesgo_agotamiento}
+      </div>
+    `;
+  });
+
+  document.getElementById("rutas").innerHTML = html;
+}
+
+// ---------- SIMULADOR ----------
+async function simular() {
+  const fecha = document.getElementById("fecha").value;
+
+  const { data } = await supabase
+    .from("v_visit_date_full_experience")
+    .select("*")
+    .eq("visit_date", fecha)
+    .limit(1);
+
+  const s = data?.[0];
+
+  document.getElementById("simulacion").innerHTML = `
+    Compra presencial: ${s.purchase_date}<br>
+    Fila estimada: ${s.fila_preventa_estimada}<br>
+    Hora Huayna: ${s.hora_recomendada_huayna}<br>
+    Clima: ${s.visibilidad}
+  `;
+}
+
+// ---------- PROBABILIDAD ----------
+async function calcular() {
+  const personas = parseInt(document.getElementById("personas").value || 0);
+  const hora = document.getElementById("hora").value;
+
+  const { data } = await supabase.rpc("submit_photo_report_and_get_probability", {
+    p_report_date: new Date().toISOString().slice(0,10),
+    p_report_time: hora,
+    p_image_url: "https://via.placeholder.com/400",
+    p_people_ahead_estimate: personas,
+    p_desired_route_code: "ruta_3a",
+    p_desired_route_name: "Huayna"
+  });
+
+  const r = data?.[0];
+
+  document.getElementById("resultado").innerHTML = `
+    Probabilidad: ${r.probabilidad_estimada_pct}%<br>
+    ${r.recomendacion_texto}
+  `;
+}
+
+// ---------- FOTOS ----------
+async function cargarFotos() {
+  const { data } = await supabase
+    .from("v_queue_photo_feed")
+    .select("*")
+    .limit(3);
+
+  let html = "";
+  data.forEach(f => {
+    html += `
+      <img src="${f.image_url}" width="100%"><br>
+      ${f.report_time} - ${f.people_ahead_estimate} personas<br><br>
+    `;
+  });
+
+  document.getElementById("fotos").innerHTML = html;
+}
+
+// INIT
+cargarEstado();
+cargarRutas();
+cargarFotos();
+
+window.simular = simular;
+window.calcular = calcular;
+
+</script>
+</head>
+
+<body style="background:#0f172a;color:white;font-family:Arial;padding:20px;">
+
+<h1>🧠 Machu Intelligence</h1>
+
+<h2>Estado en vivo</h2>
+<div id="estado">Cargando...</div>
+
+<h2>Rutas</h2>
+<div id="rutas">Cargando...</div>
+
+<h2>Simular visita</h2>
+<input type="date" id="fecha">
+<button onclick="simular()">Simular</button>
+<div id="simulacion"></div>
+
+<h2>Estoy en la fila</h2>
+<input type="time" id="hora">
+<input type="number" id="personas" placeholder="Personas delante">
+<button onclick="calcular()">Calcular</button>
+<div id="resultado"></div>
+
+<h2>Fotos reales</h2>
+<div id="fotos"></div>
+
+</body>
+</html>
