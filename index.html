@@ -2,7 +2,8 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Machu Intelligence</title>
+<title>Fila Machu Picchu</title>
+
 <script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
@@ -11,17 +12,27 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------- ESTADO EN VIVO ----------
+// ---------- ESTADO ----------
 async function cargarEstado() {
   const { data } = await supabase.from("v_home_live_status").select("*").limit(1);
   const s = data?.[0];
   if (!s) return;
 
+  let estadoColor = "green";
+  if (s.turnos_disponibles < 20) estadoColor = "red";
+  else if (s.turnos_disponibles < 50) estadoColor = "orange";
+
   document.getElementById("estado").innerHTML = `
-    Turnos entregados: ${s.turnos_entregados}<br>
-    Disponibles: ${s.turnos_disponibles}<br>
-    Fila: ${s.fila_estimada}<br>
-    Huayna: ${s.etiqueta_huayna}
+    <div class="card big">
+      <h2>Estado actual</h2>
+      <div class="estado ${estadoColor}">
+        ${s.turnos_disponibles > 20 ? "🟢 Aún alcanzas" : "🔴 Alto riesgo"}
+      </div>
+      <p><b>Disponibles:</b> ${s.turnos_disponibles}</p>
+      <p><b>Entregados:</b> ${s.turnos_entregados}</p>
+      <p><b>Fila estimada:</b> ${s.fila_estimada}</p>
+      <p><b>Huayna:</b> ${s.etiqueta_huayna}</p>
+    </div>
   `;
 }
 
@@ -31,11 +42,15 @@ async function cargarRutas() {
   let html = "";
 
   data.forEach(r => {
+    let color = "green";
+    if (r.disponibles < 10) color = "red";
+    else if (r.disponibles < 30) color = "orange";
+
     html += `
-      <div style="margin-bottom:10px;">
-        <b>${r.route_name}</b><br>
-        Disponibles: ${r.disponibles}<br>
-        Riesgo: ${r.riesgo_agotamiento}
+      <div class="card ruta ${color}">
+        <h3>${r.route_name}</h3>
+        <p>Disponibles: ${r.disponibles}</p>
+        <p>Riesgo: ${r.riesgo_agotamiento}</p>
       </div>
     `;
   });
@@ -56,10 +71,12 @@ async function simular() {
   const s = data?.[0];
 
   document.getElementById("simulacion").innerHTML = `
-    Compra presencial: ${s.purchase_date}<br>
-    Fila estimada: ${s.fila_preventa_estimada}<br>
-    Hora Huayna: ${s.hora_recomendada_huayna}<br>
-    Clima: ${s.visibilidad}
+    <div class="card">
+      <p><b>Compra:</b> ${s.purchase_date}</p>
+      <p><b>Fila:</b> ${s.fila_preventa_estimada}</p>
+      <p><b>Hora recomendada:</b> ${s.hora_recomendada_huayna}</p>
+      <p><b>Clima:</b> ${s.visibilidad}</p>
+    </div>
   `;
 }
 
@@ -80,8 +97,10 @@ async function calcular() {
   const r = data?.[0];
 
   document.getElementById("resultado").innerHTML = `
-    Probabilidad: ${r.probabilidad_estimada_pct}%<br>
-    ${r.recomendacion_texto}
+    <div class="card resultado">
+      <h3>${r.probabilidad_estimada_pct}% probabilidad</h3>
+      <p>${r.recomendacion_texto}</p>
+    </div>
   `;
 }
 
@@ -95,8 +114,10 @@ async function cargarFotos() {
   let html = "";
   data.forEach(f => {
     html += `
-      <img src="${f.image_url}" width="100%"><br>
-      ${f.report_time} - ${f.people_ahead_estimate} personas<br><br>
+      <div class="card">
+        <img src="${f.image_url}" />
+        <p>${f.report_time} · ${f.people_ahead_estimate} personas</p>
+      </div>
     `;
   });
 
@@ -112,17 +133,98 @@ window.simular = simular;
 window.calcular = calcular;
 
 </script>
+
+<style>
+body {
+  background:#0f172a;
+  color:white;
+  font-family: Inter, Arial;
+  margin:0;
+  padding:20px;
+}
+
+h1 {
+  font-size:28px;
+  margin-bottom:10px;
+}
+
+.container {
+  max-width:1100px;
+  margin:auto;
+}
+
+.hero {
+  margin-bottom:30px;
+}
+
+.card {
+  background:#1e293b;
+  padding:15px;
+  border-radius:12px;
+  margin-bottom:15px;
+}
+
+.card.big {
+  text-align:center;
+}
+
+.estado {
+  font-size:22px;
+  margin:10px 0;
+}
+
+.green { color:#22c55e; }
+.orange { color:#facc15; }
+.red { color:#ef4444; }
+
+.grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
+  gap:10px;
+}
+
+.ruta {
+  border-left:4px solid;
+}
+
+.ruta.green { border-color:#22c55e; }
+.ruta.orange { border-color:#facc15; }
+.ruta.red { border-color:#ef4444; }
+
+input, button {
+  width:100%;
+  padding:10px;
+  margin-top:5px;
+  border-radius:8px;
+  border:none;
+}
+
+button {
+  background:#22c55e;
+  font-weight:bold;
+  cursor:pointer;
+}
+
+img {
+  width:100%;
+  border-radius:8px;
+}
+</style>
 </head>
 
-<body style="background:#0f172a;color:white;font-family:Arial;padding:20px;">
+<body>
 
-<h1>🧠 Machu Intelligence</h1>
+<div class="container">
 
-<h2>Estado en vivo</h2>
-<div id="estado">Cargando...</div>
+<div class="hero">
+  <h1>¿Alcanzarás entrada a Machu Picchu?</h1>
+  <p>Datos reales de la fila presencial en tiempo casi real.</p>
+</div>
 
-<h2>Rutas</h2>
-<div id="rutas">Cargando...</div>
+<div id="estado">Cargando estado...</div>
+
+<h2>Rutas en vivo</h2>
+<div id="rutas" class="grid"></div>
 
 <h2>Simular visita</h2>
 <input type="date" id="fecha">
@@ -136,7 +238,9 @@ window.calcular = calcular;
 <div id="resultado"></div>
 
 <h2>Fotos reales</h2>
-<div id="fotos"></div>
+<div id="fotos" class="grid"></div>
+
+</div>
 
 </body>
 </html>
