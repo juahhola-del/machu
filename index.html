@@ -45,6 +45,97 @@
       return map[code] || "Ruta";
     }
 
+    function formatAgotamiento(value) {
+      if (!value) return "—";
+
+      try {
+        const date = new Date(value);
+        if (isNaN(date.getTime())) return value;
+
+        return new Intl.DateTimeFormat("es-PE", {
+          timeZone: "America/Lima",
+          day: "2-digit",
+          month: "short",
+          hour: "numeric",
+          minute: "2-digit"
+        }).format(date);
+      } catch {
+        return value;
+      }
+    }
+
+    async function cargarClima() {
+      const el = document.getElementById("clima");
+
+      el.innerHTML = `
+        <div class="clima-head">
+          <div>
+            <div class="eyebrow">Clima en Machu Picchu</div>
+            <h3>Condición actual</h3>
+          </div>
+          <div class="clima-icon">🌥️</div>
+        </div>
+
+        <div class="grid clima-grid">
+          <div class="mini-stat">
+            <span>Estado</span>
+            <strong>Parcialmente nublado</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Temperatura</span>
+            <strong>18°C</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Humedad</span>
+            <strong>Alta</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Visibilidad</span>
+            <strong>Media</strong>
+          </div>
+        </div>
+
+        <p class="clima-note">
+          Bloque inicial. Más adelante podemos conectarlo a clima real y acompañarlo con imágenes según condición del día.
+        </p>
+      `;
+    }
+
+    async function capturarLead() {
+      const emailEl = document.getElementById("email");
+      const email = emailEl.value.trim();
+
+      if (!email) {
+        alert("Ingresa tu correo");
+        return;
+      }
+
+      const { error } = await supabase
+        .from("leads")
+        .insert([{ email }]);
+
+      if (error) {
+        console.error("Error capturando lead:", error);
+        alert("No se pudo guardar tu correo. Intenta nuevamente.");
+      } else {
+        alert("Listo. Te avisaremos 🙌");
+        emailEl.value = "";
+      }
+    }
+
+    async function interesProducto() {
+      const { error } = await supabase
+        .from("interes_producto")
+        .insert([{ created_at: new Date().toISOString() }]);
+
+      if (error) {
+        console.error("Error registrando interés:", error);
+        alert("No se pudo registrar tu interés.");
+      } else {
+        alert("Perfecto. Te avisaremos cuando tengamos más información 🙌");
+      }
+    }
+
     async function cargarEstado() {
       const el = document.getElementById("estado");
 
@@ -131,11 +222,11 @@
 
             <div class="grid two-col" style="margin-top:14px;">
               <div class="subcard">
-                <h4>Lectura rápida</h4>
+                <h4>Lectura general del día</h4>
                 <p>${fmt(s.lectura_preventa)}</p>
               </div>
               <div class="subcard">
-                <h4>Recomendación base</h4>
+                <h4>Recomendación base del sistema</h4>
                 <p>${fmt(s.recomendacion_llegada_huayna)}</p>
               </div>
             </div>
@@ -159,7 +250,7 @@
         const { data, error } = await supabase
           .from("v_ticket_alerts_active")
           .select("*")
-          .limit(6);
+          .limit(10);
 
         if (error) throw error;
 
@@ -172,8 +263,30 @@
           return;
         }
 
+        const unique = [];
+        const seen = new Set();
+
+        for (const a of data) {
+          const key = `${a.alert_type || ""}-${a.route_code || ""}-${a.title || ""}`;
+          if (!seen.has(key)) {
+            seen.add(key);
+            unique.push(a);
+          }
+        }
+
+        const orderValue = (severity) => {
+          const s = String(severity || "").toLowerCase();
+          if (s.includes("crit") || s.includes("alta") || s.includes("high")) return 1;
+          if (s.includes("media") || s.includes("medium") || s.includes("warn")) return 2;
+          return 3;
+        };
+
+        unique.sort((a, b) => orderValue(a.severity) - orderValue(b.severity));
+
+        const finalAlerts = unique.slice(0, 3);
+
         let html = "";
-        data.forEach(a => {
+        finalAlerts.forEach(a => {
           const c = severityClass(a.severity);
           html += `
             <div class="card alert-card ${c}">
@@ -225,7 +338,7 @@
                 <div><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
                 <div><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
                 <div><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-                <div><span>Agotamiento</span><strong>${fmt(r.agotamiento_estimado)}</strong></div>
+                <div><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
               </div>
 
               <p class="lectura">${fmt(r.lectura_rapida)}</p>
@@ -262,14 +375,21 @@
         const s = data?.[0];
 
         if (!s) {
-          el.innerHTML = `<div class="card"><p>No hay simulación disponible para esa fecha.</p></div>`;
+          el.innerHTML = `
+            <div class="card">
+              <h3>Aún estamos aprendiendo</h3>
+              <p>Estamos acumulando datos reales para esta fecha.</p>
+              <p>Vuelve más tarde o revisa el estado en vivo.</p>
+            </div>
+          `;
           return;
         }
 
-        const horaRecomendada =
-          rutaDeseada === "ruta_3a"
-            ? fmt(s.hora_recomendada_huayna)
-            : fmt(s.hora_recomendada_clasico);
+        let horaRecomendada = "—";
+
+        if (rutaDeseada === "ruta_3a") horaRecomendada = fmt(s.hora_recomendada_huayna);
+        else if (rutaDeseada === "ruta_2a") horaRecomendada = fmt(s.hora_recomendada_clasico);
+        else horaRecomendada = "Aún no disponible para esta ruta";
 
         el.innerHTML = `
           <div class="card">
@@ -400,8 +520,11 @@
 
     window.simular = simular;
     window.calcular = calcular;
+    window.capturarLead = capturarLead;
+    window.interesProducto = interesProducto;
 
     window.addEventListener("DOMContentLoaded", () => {
+      cargarClima();
       cargarEstado();
       cargarAlertas();
       cargarRutas();
@@ -525,6 +648,13 @@
 
     .two-col{
       grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
+
+    .hero-top-grid{
+      display:grid;
+      grid-template-columns:1.6fr 1fr;
+      gap:16px;
+      align-items:start;
     }
 
     .card{
@@ -723,6 +853,69 @@
       line-height:1.6;
     }
 
+    .clima-head{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:14px;
+      margin-bottom:14px;
+    }
+
+    .clima-head h3{
+      margin:0;
+    }
+
+    .clima-icon{
+      font-size:34px;
+      line-height:1;
+    }
+
+    .clima-grid{
+      grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .clima-note{
+      color:var(--muted);
+      margin-top:14px;
+      margin-bottom:0;
+      font-size:14px;
+      line-height:1.5;
+    }
+
+    .lead-card{
+      text-align:center;
+    }
+
+    .lead-wrap{
+      max-width:430px;
+      margin:14px auto 0;
+    }
+
+    .small-muted{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .product-card{
+      text-align:center;
+    }
+
+    .product-image{
+      max-width:250px;
+      width:100%;
+      border-radius:12px;
+      margin:16px auto;
+      display:block;
+      object-fit:cover;
+    }
+
+    @media (max-width:900px){
+      .hero-top-grid{
+        grid-template-columns:1fr;
+      }
+    }
+
     @media (max-width:720px){
       h1{font-size:34px}
       .hero p{font-size:16px}
@@ -733,16 +926,42 @@
 <body>
   <div class="container">
     <section class="hero">
-      <div class="hero-badge">Prefila + fila de compra + presión por ruta</div>
-      <h1>Fila Machu Picchu</h1>
-      <p>
-        Predicción de prefila, estado en vivo y apoyo para decidir mejor tu llegada presencial.
-        Primero compites por posición en la prefila. Después compites por la ruta en la fila de compra.
-      </p>
+      <div class="hero-top-grid">
+        <div>
+          <div class="hero-badge">Prefila + fila de compra + presión por ruta</div>
+          <h1>Fila Machu Picchu</h1>
+          <p>
+            Predicción de prefila, estado en vivo y apoyo para decidir mejor tu llegada presencial.
+            Primero compites por posición en la prefila. Después compites por la ruta en la fila de compra.
+          </p>
 
-      <div class="hero-cta">
-        <a href="#estado-section" class="anchor-btn primary">Ver estado de hoy</a>
-        <a href="#simulador-section" class="anchor-btn secondary">Simular mi fecha</a>
+          <div class="hero-cta">
+            <a href="#estado-section" class="anchor-btn primary">Ver estado de hoy</a>
+            <a href="#simulador-section" class="anchor-btn secondary">Simular mi fecha</a>
+          </div>
+        </div>
+
+        <div id="clima" class="card">
+          <p>Cargando clima...</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card lead-card">
+        <h2>¿Vas a ir a Machu Picchu?</h2>
+        <p>Recibe alertas cuando tu ruta tenga mejores opciones o cuando el día esté muy exigente.</p>
+
+        <div class="lead-wrap">
+          <input type="email" id="email" placeholder="Tu correo" />
+          <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
+            Quiero recibir alertas
+          </button>
+        </div>
+
+        <p class="small-muted">
+          También te avisaremos cuando lancemos herramientas y novedades.
+        </p>
       </div>
     </section>
 
@@ -770,6 +989,23 @@
           <h2>Estado de hoy</h2>
           <p>Cargando estado...</p>
         </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card product-card">
+        <h2>¿Te preocupa el mal de altura?</h2>
+        <p>Estamos probando una solución para mejorar la adaptación en Machu Picchu.</p>
+
+        <img src="TU_IMAGEN_AQUI" alt="Producto altura" class="product-image" />
+
+        <button onclick="interesProducto()">
+          Quiero saber más
+        </button>
+
+        <p class="small-muted">
+          Acceso anticipado en Cusco
+        </p>
       </div>
     </section>
 
@@ -802,8 +1038,12 @@
           <div>
             <label for="ruta-simulador">Ruta objetivo</label>
             <select id="ruta-simulador">
-              <option value="ruta_3a">Huayna</option>
+              <option value="ruta_3a">Huayna Picchu</option>
               <option value="ruta_2a">Clásico</option>
+              <option value="ruta_1a">Montaña Machu Picchu</option>
+              <option value="ruta_1b">Terraza Superior</option>
+              <option value="ruta_2b">Terraza Inferior</option>
+              <option value="ruta_3b">Otra ruta</option>
             </select>
           </div>
         </div>
@@ -863,9 +1103,6 @@
     <div class="footer-note">
       Tarea técnica pendiente importante: verificar de forma periódica que Supabase siga acumulando correctamente el histórico del scraper y que los snapshots sigan siendo la base real de la predicción.
     </div>
-  </div>
-</body>
-</html>
   </div>
 </body>
 </html>
