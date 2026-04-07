@@ -64,6 +64,20 @@
       }
     }
 
+    function formatDateForInputHint(dateString) {
+      if (!dateString) return "—";
+      try {
+        const date = new Date(dateString + "T00:00:00");
+        return new Intl.DateTimeFormat("es-PE", {
+          day: "2-digit",
+          month: "short",
+          year: "numeric"
+        }).format(date);
+      } catch {
+        return dateString;
+      }
+    }
+
     async function cargarClima() {
       const el = document.getElementById("clima");
 
@@ -96,7 +110,7 @@
         </div>
 
         <p class="clima-note">
-          Este bloque luego puede conectarse a clima real, humedad y visuales del día en Machu Picchu.
+          Este bloque puede conectarse después a clima real, humedad y visuales según la condición del día en Machu Picchu.
         </p>
       `;
     }
@@ -233,7 +247,7 @@
 
             <div class="grid two-col" style="margin-top:14px;">
               <div class="subcard">
-                <h4>Lectura general del día</h4>
+                <h4>Resumen del sistema hoy</h4>
                 <p>${fmt(s.lectura_preventa)}</p>
               </div>
               <div class="subcard">
@@ -261,7 +275,7 @@
         const { data, error } = await supabase
           .from("v_ticket_alerts_active")
           .select("*")
-          .limit(10);
+          .limit(12);
 
         if (error) throw error;
 
@@ -285,16 +299,46 @@
           }
         }
 
-        const orderValue = (severity) => {
-          const s = String(severity || "").toLowerCase();
-          if (s.includes("crit") || s.includes("alta") || s.includes("high")) return 1;
-          if (s.includes("media") || s.includes("medium") || s.includes("warn")) return 2;
-          return 3;
-        };
+        const criticals = [];
+        const mediums = [];
+        const opportunities = [];
 
-        unique.sort((a, b) => orderValue(a.severity) - orderValue(b.severity));
+        unique.forEach(a => {
+          const sev = String(a.severity || "").toLowerCase();
+          const title = String(a.title || "").toLowerCase();
+          const message = String(a.message || "").toLowerCase();
 
-        const finalAlerts = unique.slice(0, 3);
+          if (
+            sev.includes("crit") ||
+            sev.includes("alta") ||
+            sev.includes("high")
+          ) {
+            criticals.push(a);
+          } else if (
+            title.includes("oportunidad") ||
+            message.includes("oportunidad")
+          ) {
+            opportunities.push(a);
+          } else {
+            mediums.push(a);
+          }
+        });
+
+        let finalAlerts = [];
+
+        if (criticals.length > 0) {
+          finalAlerts = criticals.slice(0, 2);
+        } else if (mediums.length > 0) {
+          finalAlerts = mediums.slice(0, 2);
+          if (opportunities.length > 0) finalAlerts.push(opportunities[0]);
+        } else {
+          finalAlerts = opportunities.slice(0, 2);
+        }
+
+        if (finalAlerts.length === 0) {
+          el.innerHTML = `<div class="card"><p>No hay alertas relevantes por ahora.</p></div>`;
+          return;
+        }
 
         let html = "";
         finalAlerts.forEach(a => {
@@ -333,12 +377,15 @@
         let html = "";
         data.forEach(r => {
           const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
+          const estadoTexto = String(fmt(r.estado_ruta, r.riesgo_agotamiento)).toLowerCase() === "bajo"
+            ? "presión baja"
+            : fmt(r.estado_ruta, r.riesgo_agotamiento);
 
           html += `
             <div class="card ruta ${color}">
               <div class="ruta-top">
                 <h3>${fmt(r.route_name)}</h3>
-                <span class="badge ${color}">${fmt(r.estado_ruta, r.riesgo_agotamiento)}</span>
+                <span class="badge ${color}">${estadoTexto}</span>
               </div>
 
               <div class="ruta-grid">
@@ -390,7 +437,7 @@
             <div class="card">
               <h3>Aún estamos aprendiendo</h3>
               <p>Estamos acumulando datos reales para esta fecha.</p>
-              <p>Vuelve más tarde o revisa el estado en vivo.</p>
+              <p>Puedes dejar tu correo abajo y te avisaremos cuando el sistema tenga mejor contexto para tu visita.</p>
             </div>
           `;
           return;
@@ -402,10 +449,21 @@
         else if (rutaDeseada === "ruta_2a") horaRecomendada = fmt(s.hora_recomendada_clasico);
         else horaRecomendada = "Aún no disponible para esta ruta";
 
+        let lecturaClima = "Referencia inicial basada en el contexto disponible del sistema.";
+        const lluvia = String(fmt(s.avg_rain, "")).toLowerCase();
+        const visibilidad = String(fmt(s.visibilidad, "")).toLowerCase();
+
+        if (visibilidad.includes("baja")) lecturaClima = "La visibilidad podría jugar en contra de la experiencia visual.";
+        else if (visibilidad.includes("alta") || visibilidad.includes("buena")) lecturaClima = "El sistema sugiere mejor escenario visual para el día de visita.";
+
+        if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") {
+          lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
+        }
+
         el.innerHTML = `
           <div class="card">
             <div class="eyebrow">Planificación</div>
-            <h3>Tu estrategia para esa fecha</h3>
+            <h3>Tu estrategia para ${formatDateForInputHint(s.visit_date)}</h3>
 
             <div class="grid two-col">
               <div class="subcard">
@@ -419,12 +477,12 @@
               </div>
 
               <div class="subcard">
-                <h4>Cómo pinta el día de visita</h4>
-                <p><b>Temperatura:</b> ${fmt(s.avg_temp)}</p>
-                <p><b>Lluvia:</b> ${fmt(s.avg_rain)}</p>
+                <h4>Clima estimado para tu visita</h4>
+                <p><b>Temperatura promedio:</b> ${fmt(s.avg_temp)}</p>
+                <p><b>Lluvia estimada:</b> ${fmt(s.avg_rain)}</p>
                 <p><b>Nubosidad:</b> ${fmt(s.avg_clouds)}</p>
                 <p><b>Visibilidad:</b> ${fmt(s.visibilidad)}</p>
-                <p><b>Recomendación visual:</b> ${fmt(s.recomendacion_visual)}</p>
+                <p><b>Lectura climática:</b> ${lecturaClima}</p>
                 <p><b>Recomendación final:</b> ${fmt(s.recomendacion_final)}</p>
               </div>
             </div>
@@ -912,19 +970,56 @@
       margin-top:10px;
       color:var(--muted);
       font-size:13px;
+      line-height:1.5;
     }
 
     .product-card{
-      text-align:center;
+      position:relative;
+      overflow:hidden;
+    }
+
+    .product-grid{
+      display:grid;
+      grid-template-columns:320px 1fr;
+      gap:22px;
+      align-items:center;
+    }
+
+    .product-visual{
+      background:linear-gradient(180deg, rgba(255,255,255,.03), rgba(255,255,255,.01));
+      border:1px solid var(--line);
+      border-radius:16px;
+      padding:16px;
     }
 
     .product-image{
-      max-width:250px;
       width:100%;
       border-radius:12px;
-      margin:16px auto;
       display:block;
       object-fit:cover;
+      background:#172033;
+    }
+
+    .product-copy h2{
+      margin-top:0;
+      margin-bottom:10px;
+    }
+
+    .product-copy p{
+      color:var(--muted);
+      line-height:1.7;
+      margin-top:0;
+    }
+
+    .product-tag{
+      display:inline-block;
+      padding:8px 12px;
+      border-radius:999px;
+      background:rgba(34,197,94,.12);
+      color:var(--green);
+      font-size:13px;
+      font-weight:700;
+      margin-bottom:14px;
     }
 
     .seo-card p{
@@ -932,20 +1027,16 @@
       line-height:1.7;
     }
 
-    .cta-final{
-      text-align:center;
-    }
-
-    .cta-final .lead-wrap{
-      max-width:460px;
-    }
-
-    @media (max-width:900px){
+    @media (max-width:980px){
       .hero-top-grid{
         grid-template-columns:1fr;
       }
 
       .lead-grid{
+        grid-template-columns:1fr;
+      }
+
+      .product-grid{
         grid-template-columns:1fr;
       }
     }
@@ -982,36 +1073,6 @@
     </section>
 
     <section class="section">
-      <div class="card lead-card">
-        <h2>Recibe alertas para tu viaje</h2>
-        <p>Déjanos tu correo, tu fecha estimada y la ruta que más te interesa. Te avisaremos cuando el sistema detecte mejores oportunidades.</p>
-
-        <div class="lead-wrap">
-          <div class="lead-grid">
-            <input type="email" id="email" placeholder="Tu correo" />
-            <input type="date" id="lead-fecha" />
-            <select id="lead-ruta">
-              <option value="ruta_3a">Huayna Picchu</option>
-              <option value="ruta_2a">Clásico</option>
-              <option value="ruta_1a">Montaña Machu Picchu</option>
-              <option value="ruta_1b">Terraza Superior</option>
-              <option value="ruta_2b">Terraza Inferior</option>
-              <option value="ruta_3b">Otra ruta</option>
-            </select>
-          </div>
-
-          <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
-            Quiero recibir alertas
-          </button>
-        </div>
-
-        <p class="small-muted">
-          También te avisaremos cuando lancemos nuevas herramientas, contenido útil y pruebas de productos relacionados con el viaje.
-        </p>
-      </div>
-    </section>
-
-    <section class="section">
       <h2>Cómo funciona MachuLine</h2>
       <div class="grid three-col">
         <div class="card how-card">
@@ -1040,18 +1101,31 @@
 
     <section class="section">
       <div class="card product-card">
-        <h2>¿Te preocupa el mal de altura?</h2>
-        <p>Estamos explorando una solución pensada para quienes viajan a Machu Picchu y quieren prepararse mejor para la altura.</p>
+        <div class="product-grid">
+          <div class="product-visual">
+            <img src="/producto.png" alt="Gel natural para la altura" class="product-image" />
+          </div>
 
-        <img src="TU_IMAGEN_AQUI" alt="Producto altura" class="product-image" />
+          <div class="product-copy">
+            <div class="product-tag">Concepto en validación</div>
+            <h2>Preparación natural para la altura</h2>
+            <p>
+              Estamos explorando un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura.
+              La idea es ofrecer una alternativa práctica para viajeros que quieren llegar mejor preparados a experiencias exigentes como Machu Picchu.
+            </p>
+            <p>
+              Por ahora estamos midiendo interés real. Si te llama la atención esta idea, puedes dejar registrada tu intención y te avisaremos si avanzamos con pruebas, disponibilidad o puntos de venta en Perú.
+            </p>
 
-        <button onclick="interesProducto()">
-          Me interesa este producto
-        </button>
+            <button onclick="interesProducto()">
+              Me interesa este producto
+            </button>
 
-        <p class="small-muted">
-          Por ahora es una validación de interés. Si avanzamos, avisaremos primero a quienes se registren.
-        </p>
+            <p class="small-muted">
+              Validación de interés inicial. Aún no es una venta directa.
+            </p>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -1098,6 +1172,36 @@
       </div>
 
       <div id="simulacion" style="margin-top:14px;"></div>
+    </section>
+
+    <section class="section">
+      <div class="card lead-card">
+        <h2>Recibe alertas para tu viaje</h2>
+        <p>Si ya estás evaluando una fecha y una ruta, déjanos tu correo y te avisaremos cuando el sistema tenga mejores señales para tu caso.</p>
+
+        <div class="lead-wrap">
+          <div class="lead-grid">
+            <input type="email" id="email" placeholder="Tu correo" />
+            <input type="date" id="lead-fecha" />
+            <select id="lead-ruta">
+              <option value="ruta_3a">Huayna Picchu</option>
+              <option value="ruta_2a">Clásico</option>
+              <option value="ruta_1a">Montaña Machu Picchu</option>
+              <option value="ruta_1b">Terraza Superior</option>
+              <option value="ruta_2b">Terraza Inferior</option>
+              <option value="ruta_3b">Otra ruta</option>
+            </select>
+          </div>
+
+          <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
+            Quiero recibir alertas
+          </button>
+        </div>
+
+        <p class="small-muted">
+          También podremos avisarte de nuevas herramientas, contenido útil y avances relacionados con productos pensados para viajeros.
+        </p>
+      </div>
     </section>
 
     <section class="section">
@@ -1175,20 +1279,6 @@
       <p class="lead">Señales de comunidad para ver cómo se está moviendo la fila en terreno.</p>
       <div id="fotos" class="grid report-grid">
         <div class="card"><p>Cargando reportes...</p></div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="card cta-final">
-        <h2>Quédate conectado con MachuLine</h2>
-        <p>Si vas a viajar pronto, deja tu correo y te iremos avisando cuando detectemos señales útiles para tu ruta y tu fecha.</p>
-
-        <div class="lead-wrap">
-          <input type="email" id="email-footer" placeholder="Tu correo" />
-          <button onclick="document.getElementById('email').value = document.getElementById('email-footer').value; capturarLead();" style="margin-top:10px; width:100%;">
-            Quiero estar al tanto
-          </button>
-        </div>
       </div>
     </section>
 
