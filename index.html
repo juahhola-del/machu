@@ -1,7 +1,8 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title>Fila Machu Picchu</title>
 
 <script type="module">
@@ -12,235 +13,838 @@ const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-// ---------- ESTADO ----------
+function fmt(v, fallback = "—") {
+  return v === null || v === undefined || v === "" ? fallback : v;
+}
+
+function routeColorByRisk(disponibles, riesgo) {
+  const r = String(riesgo || "").toLowerCase();
+  if (r.includes("crít") || r.includes("alto") || Number(disponibles) < 10) return "red";
+  if (r.includes("medio") || r.includes("riesgo") || Number(disponibles) < 30) return "orange";
+  return "green";
+}
+
+function severityClass(severity) {
+  const s = String(severity || "").toLowerCase();
+  if (s.includes("high") || s.includes("alta") || s.includes("crit")) return "red";
+  if (s.includes("medium") || s.includes("media") || s.includes("warn")) return "orange";
+  return "green";
+}
+
+// ---------- ESTADO PRINCIPAL ----------
 async function cargarEstado() {
-  const { data } = await supabase.from("v_home_live_status").select("*").limit(1);
-  const s = data?.[0];
-  if (!s) return;
+  const el = document.getElementById("estado");
 
-  let estadoColor = "green";
-  if (s.turnos_disponibles < 20) estadoColor = "red";
-  else if (s.turnos_disponibles < 50) estadoColor = "orange";
+  try {
+    const { data, error } = await supabase
+      .from("v_home_live_status")
+      .select("*")
+      .limit(1);
 
-  document.getElementById("estado").innerHTML = `
-    <div class="card big">
-      <h2>Estado actual</h2>
-      <div class="estado ${estadoColor}">
-        ${s.turnos_disponibles > 20 ? "🟢 Aún alcanzas" : "🔴 Alto riesgo"}
+    if (error) throw error;
+
+    const s = data?.[0];
+    if (!s) {
+      el.innerHTML = `
+        <div class="card big">
+          <h2>Estado de hoy</h2>
+          <p>Aún no hay datos en vivo disponibles.</p>
+        </div>
+      `;
+      return;
+    }
+
+    const disponibles = Number(s.turnos_disponibles || 0);
+    let estadoColor = "green";
+    let estadoTexto = "🟢 Buen margen";
+
+    if (disponibles < 20) {
+      estadoColor = "red";
+      estadoTexto = "🔴 Alta presión";
+    } else if (disponibles < 50) {
+      estadoColor = "orange";
+      estadoTexto = "🟡 Riesgo medio";
+    }
+
+    el.innerHTML = `
+      <div class="card hero-status">
+        <div class="status-head">
+          <div>
+            <div class="eyebrow">Estado en vivo</div>
+            <h2>Así viene hoy la compra presencial</h2>
+          </div>
+          <div class="estado-pill ${estadoColor}">${estadoTexto}</div>
+        </div>
+
+        <div class="grid stats-grid">
+          <div class="mini-stat">
+            <span>Turnos disponibles</span>
+            <strong>${fmt(s.turnos_disponibles)}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Turnos entregados</span>
+            <strong>${fmt(s.turnos_entregados)}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Fila estimada</span>
+            <strong>${fmt(s.fila_estimada)}</strong>
+          </div>
+          <div class="mini-stat">
+            <span>Última actualización</span>
+            <strong>${fmt(s.captured_at)}</strong>
+          </div>
+        </div>
+
+        <div class="grid info-grid">
+          <div class="info-box">
+            <span>Huayna</span>
+            <strong>${fmt(s.etiqueta_huayna)}</strong>
+          </div>
+          <div class="info-box">
+            <span>Clásico</span>
+            <strong>${fmt(s.etiqueta_clasico)}</strong>
+          </div>
+          <div class="info-box">
+            <span>Presión general</span>
+            <strong>${fmt(s.etiqueta_presion_total)}</strong>
+          </div>
+          <div class="info-box">
+            <span>Base recomendada</span>
+            <strong>${fmt(s.recomendacion_llegada_huayna)}</strong>
+          </div>
+        </div>
       </div>
-      <p><b>Disponibles:</b> ${s.turnos_disponibles}</p>
-      <p><b>Entregados:</b> ${s.turnos_entregados}</p>
-      <p><b>Fila estimada:</b> ${s.fila_estimada}</p>
-      <p><b>Huayna:</b> ${s.etiqueta_huayna}</p>
-    </div>
-  `;
+    `;
+  } catch (err) {
+    console.error("Error cargando estado:", err);
+    el.innerHTML = `
+      <div class="card big">
+        <h2>Estado de hoy</h2>
+        <p>No se pudo cargar el estado en vivo.</p>
+      </div>
+    `;
+  }
+}
+
+// ---------- ALERTAS ----------
+async function cargarAlertas() {
+  const el = document.getElementById("alertas");
+
+  try {
+    const { data, error } = await supabase
+      .from("v_ticket_alerts_active")
+      .select("*")
+      .limit(6);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      el.innerHTML = `
+        <div class="card">
+          <p>No hay alertas activas por ahora.</p>
+        </div>
+      `;
+      return;
+    }
+
+    let html = "";
+    data.forEach(a => {
+      const c = severityClass(a.severity);
+      html += `
+        <div class="card alert-card ${c}">
+          <div class="alert-title">${fmt(a.title, "Alerta")}</div>
+          <p>${fmt(a.message)}</p>
+          <small>${fmt(a.route_name, "General")}</small>
+        </div>
+      `;
+    });
+
+    el.innerHTML = html;
+  } catch (err) {
+    console.error("Error cargando alertas:", err);
+    el.innerHTML = `<div class="card"><p>No se pudieron cargar las alertas.</p></div>`;
+  }
 }
 
 // ---------- RUTAS ----------
 async function cargarRutas() {
-  const { data } = await supabase.from("v_home_routes_live").select("*");
-  let html = "";
+  const el = document.getElementById("rutas");
 
-  data.forEach(r => {
-    let color = "green";
-    if (r.disponibles < 10) color = "red";
-    else if (r.disponibles < 30) color = "orange";
+  try {
+    const { data, error } = await supabase
+      .from("v_home_routes_live")
+      .select("*");
 
-    html += `
-      <div class="card ruta ${color}">
-        <h3>${r.route_name}</h3>
-        <p>Disponibles: ${r.disponibles}</p>
-        <p>Riesgo: ${r.riesgo_agotamiento}</p>
-      </div>
-    `;
-  });
+    if (error) throw error;
 
-  document.getElementById("rutas").innerHTML = html;
+    if (!data || data.length === 0) {
+      el.innerHTML = `<div class="card"><p>Aún no hay rutas disponibles para mostrar.</p></div>`;
+      return;
+    }
+
+    let html = "";
+    data.forEach(r => {
+      const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
+
+      html += `
+        <div class="card ruta ${color}">
+          <div class="ruta-top">
+            <h3>${fmt(r.route_name)}</h3>
+            <span class="badge ${color}">${fmt(r.estado_ruta, r.riesgo_agotamiento)}</span>
+          </div>
+
+          <div class="ruta-grid">
+            <div><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
+            <div><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
+            <div><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
+            <div><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
+            <div><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
+            <div><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
+            <div><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
+            <div><span>Agotamiento</span><strong>${fmt(r.agotamiento_estimado)}</strong></div>
+          </div>
+
+          <p class="lectura">${fmt(r.lectura_rapida)}</p>
+        </div>
+      `;
+    });
+
+    el.innerHTML = html;
+  } catch (err) {
+    console.error("Error cargando rutas:", err);
+    el.innerHTML = `<div class="card"><p>No se pudieron cargar las rutas.</p></div>`;
+  }
 }
 
 // ---------- SIMULADOR ----------
 async function simular() {
   const fecha = document.getElementById("fecha").value;
+  const rutaDeseada = document.getElementById("ruta-simulador").value;
+  const el = document.getElementById("simulacion");
 
-  const { data } = await supabase
-    .from("v_visit_date_full_experience")
-    .select("*")
-    .eq("visit_date", fecha)
-    .limit(1);
+  if (!fecha) {
+    el.innerHTML = `<div class="card"><p>Primero elige una fecha de visita.</p></div>`;
+    return;
+  }
 
-  const s = data?.[0];
+  try {
+    const { data, error } = await supabase
+      .from("v_visit_date_full_experience")
+      .select("*")
+      .eq("visit_date", fecha)
+      .limit(1);
 
-  document.getElementById("simulacion").innerHTML = `
-    <div class="card">
-      <p><b>Compra:</b> ${s.purchase_date}</p>
-      <p><b>Fila:</b> ${s.fila_preventa_estimada}</p>
-      <p><b>Hora recomendada:</b> ${s.hora_recomendada_huayna}</p>
-      <p><b>Clima:</b> ${s.visibilidad}</p>
-    </div>
-  `;
-}
+    if (error) throw error;
 
-// ---------- PROBABILIDAD ----------
-async function calcular() {
-  const personas = parseInt(document.getElementById("personas").value || 0);
-  const hora = document.getElementById("hora").value;
+    const s = data?.[0];
+    if (!s) {
+      el.innerHTML = `<div class="card"><p>No hay simulación disponible para esa fecha.</p></div>`;
+      return;
+    }
 
-  const { data } = await supabase.rpc("submit_photo_report_and_get_probability", {
-    p_report_date: new Date().toISOString().slice(0,10),
-    p_report_time: hora,
-    p_image_url: "https://via.placeholder.com/400",
-    p_people_ahead_estimate: personas,
-    p_desired_route_code: "ruta_3a",
-    p_desired_route_name: "Huayna"
-  });
+    const horaRecomendada =
+      rutaDeseada === "ruta_3a"
+        ? fmt(s.hora_recomendada_huayna)
+        : fmt(s.hora_recomendada_clasico);
 
-  const r = data?.[0];
-
-  document.getElementById("resultado").innerHTML = `
-    <div class="card resultado">
-      <h3>${r.probabilidad_estimada_pct}% probabilidad</h3>
-      <p>${r.recomendacion_texto}</p>
-    </div>
-  `;
-}
-
-// ---------- FOTOS ----------
-async function cargarFotos() {
-  const { data } = await supabase
-    .from("v_queue_photo_feed")
-    .select("*")
-    .limit(3);
-
-  let html = "";
-  data.forEach(f => {
-    html += `
+    el.innerHTML = `
       <div class="card">
-        <img src="${f.image_url}" />
-        <p>${f.report_time} · ${f.people_ahead_estimate} personas</p>
+        <div class="eyebrow">Planificación</div>
+        <h3>Tu estrategia para esa fecha</h3>
+
+        <div class="grid two-col">
+          <div class="subcard">
+            <h4>Prefila y compra</h4>
+            <p><b>Fecha de visita:</b> ${fmt(s.visit_date)}</p>
+            <p><b>Día para comprar presencial:</b> ${fmt(s.purchase_date)}</p>
+            <p><b>Fila de preventa estimada:</b> ${fmt(s.fila_preventa_estimada)}</p>
+            <p><b>Hora recomendada para llegar:</b> ${horaRecomendada}</p>
+            <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
+            <p><b>Fila de venta:</b> ${fmt(s.recomendacion_fila_venta)}</p>
+          </div>
+
+          <div class="subcard">
+            <h4>Cómo pinta el día de visita</h4>
+            <p><b>Temperatura:</b> ${fmt(s.avg_temp)}</p>
+            <p><b>Lluvia:</b> ${fmt(s.avg_rain)}</p>
+            <p><b>Nubosidad:</b> ${fmt(s.avg_clouds)}</p>
+            <p><b>Visibilidad:</b> ${fmt(s.visibilidad)}</p>
+            <p><b>Recomendación visual:</b> ${fmt(s.recomendacion_visual)}</p>
+            <p><b>Recomendación final:</b> ${fmt(s.recomendacion_final)}</p>
+          </div>
+        </div>
       </div>
     `;
-  });
-
-  document.getElementById("fotos").innerHTML = html;
+  } catch (err) {
+    console.error("Error en simulación:", err);
+    el.innerHTML = `<div class="card"><p>No se pudo simular esa fecha.</p></div>`;
+  }
 }
 
-// INIT
-cargarEstado();
-cargarRutas();
-cargarFotos();
+// ---------- ESTOY EN LA FILA ----------
+async function calcular() {
+  const personas = parseInt(document.getElementById("personas").value || "0", 10);
+  const hora = document.getElementById("hora").value;
+  const ruta = document.getElementById("ruta").value;
+  const comentario = document.getElementById("comentario").value || null;
+  const el = document.getElementById("resultado");
+
+  if (!hora) {
+    el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
+    return;
+  }
+
+  const routeNameMap = {
+    "ruta_3a": "Huayna",
+    "ruta_2a": "Clásico",
+    "ruta_1a": "Montaña Machu Picchu",
+    "ruta_1b": "Terraza Superior",
+    "ruta_2b": "Terraza Inferior",
+    "ruta_3b": "Otra ruta"
+  };
+
+  try {
+    const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
+      p_report_date: new Date().toISOString().slice(0, 10),
+      p_report_time: hora,
+      p_people_ahead_estimate: personas,
+      p_desired_route_code: ruta,
+      p_desired_route_name: routeNameMap[ruta] || "Ruta",
+      p_comment: comentario
+    });
+
+    if (error) throw error;
+
+    const r = data?.[0];
+    if (!r) {
+      el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
+      return;
+    }
+
+    const color = severityClass(r.riesgo || r.nivel_probabilidad || "");
+
+    el.innerHTML = `
+      <div class="card resultado ${color}">
+        <div class="eyebrow">Situación real</div>
+        <h3>${fmt(r.probabilidad_estimada_pct)}% de probabilidad</h3>
+        <p><b>Nivel:</b> ${fmt(r.nivel_probabilidad)}</p>
+        <p><b>Riesgo:</b> ${fmt(r.riesgo)}</p>
+        <p><b>Recomendación:</b> ${fmt(r.recomendacion_texto || r.recomendacion)}</p>
+        <p><b>Alternativa:</b> ${fmt(r.alternativa_sugerida)}</p>
+        <p><b>Mensaje:</b> ${fmt(r.mensaje_corto)}</p>
+      </div>
+    `;
+  } catch (err) {
+    console.error("Error calculando probabilidad:", err);
+    el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
+  }
+}
+
+// ---------- FEED ----------
+async function cargarFotos() {
+  const el = document.getElementById("fotos");
+
+  try {
+    const { data, error } = await supabase
+      .from("v_queue_photo_feed")
+      .select("*")
+      .limit(6);
+
+    if (error) throw error;
+
+    if (!data || data.length === 0) {
+      el.innerHTML = `<div class="card"><p>Aún no hay reportes recientes.</p></div>`;
+      return;
+    }
+
+    let html = "";
+    data.forEach(f => {
+      html += `
+        <div class="card report-card">
+          ${f.image_url ? `<img src="${f.image_url}" alt="Reporte reciente" />` : ""}
+          <div class="report-body">
+            <p><b>Hora:</b> ${fmt(f.report_time)}</p>
+            <p><b>Personas delante:</b> ${fmt(f.people_ahead_estimate)}</p>
+            <p><b>Ruta buscada:</b> ${fmt(f.desired_route_name)}</p>
+            <p><b>Comentario:</b> ${fmt(f.comment)}</p>
+            <p><b>Confianza:</b> ${fmt(f.confidence_score)}</p>
+          </div>
+        </div>
+      `;
+    });
+
+    el.innerHTML = html;
+  } catch (err) {
+    console.error("Error cargando reportes:", err);
+    el.innerHTML = `<div class="card"><p>No se pudieron cargar los reportes recientes.</p></div>`;
+  }
+}
 
 window.simular = simular;
 window.calcular = calcular;
 
+window.addEventListener("DOMContentLoaded", () => {
+  cargarEstado();
+  cargarAlertas();
+  cargarRutas();
+  cargarFotos();
+});
 </script>
 
 <style>
-body {
-  background:#0f172a;
-  color:white;
-  font-family: Inter, Arial;
+:root{
+  --bg:#0b1120;
+  --bg-soft:#111827;
+  --card:#172033;
+  --card-2:#1e293b;
+  --text:#e5eefc;
+  --muted:#94a3b8;
+  --green:#22c55e;
+  --yellow:#facc15;
+  --red:#ef4444;
+  --line:rgba(255,255,255,.08);
+}
+
+*{box-sizing:border-box}
+
+body{
   margin:0;
-  padding:20px;
+  font-family:Inter,Arial,sans-serif;
+  background:
+    radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 20%),
+    radial-gradient(circle at top left, rgba(250,204,21,.08), transparent 20%),
+    var(--bg);
+  color:var(--text);
 }
 
-h1 {
-  font-size:28px;
-  margin-bottom:10px;
+.container{
+  max-width:1160px;
+  margin:0 auto;
+  padding:24px 18px 60px;
 }
 
-.container {
-  max-width:1100px;
-  margin:auto;
+.hero{
+  padding:32px 0 12px;
 }
 
-.hero {
-  margin-bottom:30px;
+.hero-badge{
+  display:inline-block;
+  padding:8px 12px;
+  border:1px solid var(--line);
+  border-radius:999px;
+  background:rgba(255,255,255,.03);
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:16px;
 }
 
-.card {
-  background:#1e293b;
-  padding:15px;
-  border-radius:12px;
-  margin-bottom:15px;
+h1{
+  font-size:42px;
+  line-height:1.05;
+  margin:0 0 12px;
 }
 
-.card.big {
-  text-align:center;
+.hero p{
+  color:var(--muted);
+  font-size:18px;
+  line-height:1.6;
+  max-width:900px;
 }
 
-.estado {
-  font-size:22px;
-  margin:10px 0;
+.hero-cta{
+  display:flex;
+  gap:12px;
+  flex-wrap:wrap;
+  margin-top:18px;
 }
 
-.green { color:#22c55e; }
-.orange { color:#facc15; }
-.red { color:#ef4444; }
-
-.grid {
-  display:grid;
-  grid-template-columns:repeat(auto-fit, minmax(220px,1fr));
-  gap:10px;
-}
-
-.ruta {
-  border-left:4px solid;
-}
-
-.ruta.green { border-color:#22c55e; }
-.ruta.orange { border-color:#facc15; }
-.ruta.red { border-color:#ef4444; }
-
-input, button {
-  width:100%;
-  padding:10px;
-  margin-top:5px;
-  border-radius:8px;
+.anchor-btn, button{
   border:none;
-}
-
-button {
-  background:#22c55e;
-  font-weight:bold;
+  border-radius:12px;
+  padding:12px 16px;
+  font-weight:700;
   cursor:pointer;
 }
 
-img {
+.anchor-btn{
+  text-decoration:none;
+  display:inline-block;
+}
+
+.anchor-btn.primary, button{
+  background:var(--green);
+  color:#04130a;
+}
+
+.anchor-btn.secondary{
+  background:transparent;
+  color:var(--text);
+  border:1px solid var(--line);
+}
+
+.section{
+  margin-top:28px;
+}
+
+.section h2{
+  font-size:24px;
+  margin:0 0 14px;
+}
+
+.section p.lead{
+  color:var(--muted);
+  margin-top:0;
+}
+
+.grid{
+  display:grid;
+  gap:14px;
+}
+
+.three-col{
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+
+.two-col{
+  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+}
+
+.card{
+  background:linear-gradient(180deg, var(--card), var(--card-2));
+  border:1px solid var(--line);
+  border-radius:18px;
+  padding:18px;
+  box-shadow:0 10px 30px rgba(0,0,0,.18);
+}
+
+.big{
+  text-align:center;
+}
+
+.eyebrow{
+  color:var(--muted);
+  text-transform:uppercase;
+  font-size:12px;
+  letter-spacing:.08em;
+  margin-bottom:8px;
+}
+
+.hero-status .status-head{
+  display:flex;
+  gap:16px;
+  justify-content:space-between;
+  align-items:flex-start;
+  margin-bottom:18px;
+  flex-wrap:wrap;
+}
+
+.estado-pill, .badge{
+  padding:10px 14px;
+  border-radius:999px;
+  font-weight:700;
+  font-size:14px;
+  display:inline-block;
+}
+
+.green{color:var(--green)}
+.orange{color:var(--yellow)}
+.red{color:var(--red)}
+
+.estado-pill.green, .badge.green{
+  background:rgba(34,197,94,.14);
+  color:var(--green);
+}
+
+.estado-pill.orange, .badge.orange{
+  background:rgba(250,204,21,.12);
+  color:var(--yellow);
+}
+
+.estado-pill.red, .badge.red{
+  background:rgba(239,68,68,.12);
+  color:var(--red);
+}
+
+.stats-grid{
+  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+  margin-bottom:14px;
+}
+
+.info-grid{
+  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+}
+
+.mini-stat, .info-box, .subcard{
+  background:rgba(255,255,255,.03);
+  border:1px solid var(--line);
+  border-radius:14px;
+  padding:14px;
+}
+
+.mini-stat span, .info-box span, .ruta-grid span{
+  display:block;
+  color:var(--muted);
+  font-size:13px;
+  margin-bottom:6px;
+}
+
+.mini-stat strong, .info-box strong{
+  font-size:22px;
+}
+
+.how-card h3{
+  margin-top:0;
+}
+
+.how-card p{
+  color:var(--muted);
+  margin-bottom:0;
+}
+
+.alert-grid{
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+}
+
+.alert-card{
+  border-left:4px solid transparent;
+}
+.alert-card.red{border-left-color:var(--red)}
+.alert-card.orange{border-left-color:var(--yellow)}
+.alert-card.green{border-left-color:var(--green)}
+
+.alert-title{
+  font-weight:800;
+  margin-bottom:8px;
+}
+
+.rutas-grid{
+  grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+}
+
+.ruta{
+  border-left:4px solid transparent;
+}
+.ruta.green{border-left-color:var(--green)}
+.ruta.orange{border-left-color:var(--yellow)}
+.ruta.red{border-left-color:var(--red)}
+
+.ruta-top{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.ruta-top h3{
+  margin:0;
+}
+
+.ruta-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.ruta-grid strong{
+  font-size:18px;
+}
+
+.lectura{
+  margin:14px 0 0;
+  color:var(--muted);
+}
+
+.form-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+  gap:12px;
+  margin-bottom:12px;
+}
+
+input, select, textarea{
   width:100%;
-  border-radius:8px;
+  background:#0f172a;
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:12px;
+  padding:12px 14px;
+  font-size:15px;
+}
+
+textarea{
+  min-height:110px;
+  resize:vertical;
+}
+
+.resultado.red{border-left:4px solid var(--red)}
+.resultado.orange{border-left:4px solid var(--yellow)}
+.resultado.green{border-left:4px solid var(--green)}
+
+.report-grid{
+  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+}
+
+.report-card img{
+  width:100%;
+  display:block;
+  border-radius:12px;
+  margin-bottom:12px;
+  max-height:220px;
+  object-fit:cover;
+}
+
+.report-body p{
+  margin:.45rem 0;
+}
+
+.footer-note{
+  margin-top:36px;
+  color:var(--muted);
+  font-size:14px;
+  line-height:1.6;
+}
+
+@media (max-width:720px){
+  h1{font-size:34px}
+  .hero p{font-size:16px}
 }
 </style>
 </head>
 
 <body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-badge">Prefila + fila de compra + presión por ruta</div>
+      <h1>Fila Machu Picchu</h1>
+      <p>
+        Predicción de prefila, estado en vivo y apoyo para decidir mejor tu llegada presencial.
+        Primero compites por posición en la prefila. Después compites por la ruta en la fila de compra.
+      </p>
 
-<div class="container">
+      <div class="hero-cta">
+        <a href="#estado-section" class="anchor-btn primary">Ver estado de hoy</a>
+        <a href="#simulador-section" class="anchor-btn secondary">Simular mi fecha</a>
+      </div>
+    </section>
 
-<div class="hero">
-  <h1>¿Alcanzarás entrada a Machu Picchu?</h1>
-  <p>Datos reales de la fila presencial en tiempo casi real.</p>
-</div>
+    <section class="section">
+      <h2>Cómo funciona esta herramienta</h2>
+      <div class="grid three-col">
+        <div class="card how-card">
+          <h3>1. Prefila</h3>
+          <p>Antes de la venta presencial, muchas personas llegan temprano para obtener una mejor posición o número.</p>
+        </div>
+        <div class="card how-card">
+          <h3>2. Fila de compra</h3>
+          <p>Aunque consigas número, todavía importa cuánto queda por ruta cuando llega tu turno de compra.</p>
+        </div>
+        <div class="card how-card">
+          <h3>3. Tu decisión</h3>
+          <p>Te mostramos presión del día, rutas críticas y una hora estimada de llegada para actuar con más criterio.</p>
+        </div>
+      </div>
+    </section>
 
-<div id="estado">Cargando estado...</div>
+    <section class="section" id="estado-section">
+      <div id="estado">
+        <div class="card big">
+          <h2>Estado de hoy</h2>
+          <p>Cargando estado...</p>
+        </div>
+      </div>
+    </section>
 
-<h2>Rutas en vivo</h2>
-<div id="rutas" class="grid"></div>
+    <section class="section">
+      <h2>Alertas activas</h2>
+      <p class="lead">Señales rápidas para entender si hoy viene tranquilo o con presión fuerte.</p>
+      <div id="alertas" class="grid alert-grid">
+        <div class="card"><p>Cargando alertas...</p></div>
+      </div>
+    </section>
 
-<h2>Simular visita</h2>
-<input type="date" id="fecha">
-<button onclick="simular()">Simular</button>
-<div id="simulacion"></div>
+    <section class="section">
+      <h2>Rutas en vivo</h2>
+      <p class="lead">No todas las rutas se comportan igual. Aquí ves riesgo, ritmo y probabilidad actual.</p>
+      <div id="rutas" class="grid rutas-grid">
+        <div class="card"><p>Cargando rutas...</p></div>
+      </div>
+    </section>
 
-<h2>Estoy en la fila</h2>
-<input type="time" id="hora">
-<input type="number" id="personas" placeholder="Personas delante">
-<button onclick="calcular()">Calcular</button>
-<div id="resultado"></div>
+    <section class="section" id="simulador-section">
+      <h2>Planifica tu visita</h2>
+      <p class="lead">Elige tu fecha de visita y la ruta que te interesa para estimar qué día comprar y a qué hora llegar.</p>
 
-<h2>Fotos reales</h2>
-<div id="fotos" class="grid"></div>
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label for="fecha">Fecha de visita</label>
+            <input type="date" id="fecha" />
+          </div>
+          <div>
+            <label for="ruta-simulador">Ruta objetivo</label>
+            <select id="ruta-simulador">
+              <option value="ruta_3a">Huayna</option>
+              <option value="ruta_2a">Clásico</option>
+            </select>
+          </div>
+        </div>
 
-</div>
+        <button onclick="simular()">Simular estrategia</button>
+      </div>
 
+      <div id="simulacion" style="margin-top:14px;"></div>
+    </section>
+
+    <section class="section">
+      <h2>Ya estoy en la fila</h2>
+      <p class="lead">Ingresa tu situación real para estimar tu probabilidad actual y una alternativa si vas muy justo.</p>
+
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label for="hora">Hora de llegada</label>
+            <input type="time" id="hora" />
+          </div>
+          <div>
+            <label for="personas">Personas delante</label>
+            <input type="number" id="personas" placeholder="Ej: 120" />
+          </div>
+          <div>
+            <label for="ruta">Ruta objetivo</label>
+            <select id="ruta">
+              <option value="ruta_3a">Huayna</option>
+              <option value="ruta_2a">Clásico</option>
+              <option value="ruta_1a">Montaña Machu Picchu</option>
+              <option value="ruta_1b">Terraza Superior</option>
+              <option value="ruta_2b">Terraza Inferior</option>
+              <option value="ruta_3b">Otra ruta</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="margin-bottom:12px;">
+          <label for="comentario">Comentario opcional</label>
+          <textarea id="comentario" placeholder="Ej: la fila avanza lento, mucha presión en Huayna..."></textarea>
+        </div>
+
+        <button onclick="calcular()">Calcular mi situación</button>
+      </div>
+
+      <div id="resultado" style="margin-top:14px;"></div>
+    </section>
+
+    <section class="section">
+      <h2>Reportes recientes</h2>
+      <p class="lead">Señales de comunidad para ver cómo se está moviendo la fila en terreno.</p>
+      <div id="fotos" class="grid report-grid">
+        <div class="card"><p>Cargando reportes...</p></div>
+      </div>
+    </section>
+
+    <div class="footer-note">
+      Tarea técnica pendiente importante: verificar que Supabase esté acumulando correctamente el histórico del scraper y que los snapshots realmente se estén guardando como base de la predicción.
+    </div>
+  </div>
 </body>
 </html>
