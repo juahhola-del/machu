@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Fila Machu Picchu</title>
+  <title>MachuLine</title>
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -96,14 +96,19 @@
         </div>
 
         <p class="clima-note">
-          Bloque inicial. Más adelante podemos conectarlo a clima real y acompañarlo con imágenes según condición del día.
+          Este bloque luego puede conectarse a clima real, humedad y visuales del día en Machu Picchu.
         </p>
       `;
     }
 
     async function capturarLead() {
       const emailEl = document.getElementById("email");
+      const fechaEl = document.getElementById("lead-fecha");
+      const rutaEl = document.getElementById("lead-ruta");
+
       const email = emailEl.value.trim();
+      const fecha_viaje = fechaEl.value || null;
+      const ruta_interes = rutaEl.value || null;
 
       if (!email) {
         alert("Ingresa tu correo");
@@ -112,7 +117,11 @@
 
       const { error } = await supabase
         .from("leads")
-        .insert([{ email }]);
+        .insert([{
+          email,
+          fecha_viaje,
+          ruta_interes
+        }]);
 
       if (error) {
         console.error("Error capturando lead:", error);
@@ -120,6 +129,8 @@
       } else {
         alert("Listo. Te avisaremos 🙌");
         emailEl.value = "";
+        fechaEl.value = "";
+        rutaEl.value = "ruta_3a";
       }
     }
 
@@ -740,11 +751,11 @@
       font-size:22px;
     }
 
-    .how-card h3{
+    .how-card h3, .guide-card h3{
       margin-top:0;
     }
 
-    .how-card p{
+    .how-card p, .guide-card p{
       color:var(--muted);
       margin-bottom:0;
     }
@@ -887,8 +898,14 @@
     }
 
     .lead-wrap{
-      max-width:430px;
+      max-width:640px;
       margin:14px auto 0;
+    }
+
+    .lead-grid{
+      display:grid;
+      grid-template-columns:2fr 1fr 1fr;
+      gap:10px;
     }
 
     .small-muted{
@@ -910,8 +927,25 @@
       object-fit:cover;
     }
 
+    .seo-card p{
+      color:var(--muted);
+      line-height:1.7;
+    }
+
+    .cta-final{
+      text-align:center;
+    }
+
+    .cta-final .lead-wrap{
+      max-width:460px;
+    }
+
     @media (max-width:900px){
       .hero-top-grid{
+        grid-template-columns:1fr;
+      }
+
+      .lead-grid{
         grid-template-columns:1fr;
       }
     }
@@ -928,11 +962,11 @@
     <section class="hero">
       <div class="hero-top-grid">
         <div>
-          <div class="hero-badge">Prefila + fila de compra + presión por ruta</div>
-          <h1>Fila Machu Picchu</h1>
+          <div class="hero-badge">Predicción de prefila + rutas + señales en vivo</div>
+          <h1>MachuLine</h1>
           <p>
-            Predicción de prefila, estado en vivo y apoyo para decidir mejor tu llegada presencial.
-            Primero compites por posición en la prefila. Después compites por la ruta en la fila de compra.
+            La herramienta para entender la prefila, la fila de compra y la presión real por ruta en Machu Picchu.
+            Úsala para decidir mejor cuándo llegar, qué ruta priorizar y qué tan exigente viene el día.
           </p>
 
           <div class="hero-cta">
@@ -949,24 +983,36 @@
 
     <section class="section">
       <div class="card lead-card">
-        <h2>¿Vas a ir a Machu Picchu?</h2>
-        <p>Recibe alertas cuando tu ruta tenga mejores opciones o cuando el día esté muy exigente.</p>
+        <h2>Recibe alertas para tu viaje</h2>
+        <p>Déjanos tu correo, tu fecha estimada y la ruta que más te interesa. Te avisaremos cuando el sistema detecte mejores oportunidades.</p>
 
         <div class="lead-wrap">
-          <input type="email" id="email" placeholder="Tu correo" />
+          <div class="lead-grid">
+            <input type="email" id="email" placeholder="Tu correo" />
+            <input type="date" id="lead-fecha" />
+            <select id="lead-ruta">
+              <option value="ruta_3a">Huayna Picchu</option>
+              <option value="ruta_2a">Clásico</option>
+              <option value="ruta_1a">Montaña Machu Picchu</option>
+              <option value="ruta_1b">Terraza Superior</option>
+              <option value="ruta_2b">Terraza Inferior</option>
+              <option value="ruta_3b">Otra ruta</option>
+            </select>
+          </div>
+
           <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
             Quiero recibir alertas
           </button>
         </div>
 
         <p class="small-muted">
-          También te avisaremos cuando lancemos herramientas y novedades.
+          También te avisaremos cuando lancemos nuevas herramientas, contenido útil y pruebas de productos relacionados con el viaje.
         </p>
       </div>
     </section>
 
     <section class="section">
-      <h2>Cómo funciona esta herramienta</h2>
+      <h2>Cómo funciona MachuLine</h2>
       <div class="grid three-col">
         <div class="card how-card">
           <h3>1. Prefila</h3>
@@ -995,16 +1041,16 @@
     <section class="section">
       <div class="card product-card">
         <h2>¿Te preocupa el mal de altura?</h2>
-        <p>Estamos probando una solución para mejorar la adaptación en Machu Picchu.</p>
+        <p>Estamos explorando una solución pensada para quienes viajan a Machu Picchu y quieren prepararse mejor para la altura.</p>
 
         <img src="TU_IMAGEN_AQUI" alt="Producto altura" class="product-image" />
 
         <button onclick="interesProducto()">
-          Quiero saber más
+          Me interesa este producto
         </button>
 
         <p class="small-muted">
-          Acceso anticipado en Cusco
+          Por ahora es una validación de interés. Si avanzamos, avisaremos primero a quienes se registren.
         </p>
       </div>
     </section>
@@ -1093,10 +1139,56 @@
     </section>
 
     <section class="section">
+      <h2>Guía y noticias</h2>
+      <p class="lead">Contenido útil para entender mejor la compra presencial y prepararte con más ventaja.</p>
+
+      <div class="grid three-col">
+        <div class="card guide-card">
+          <h3>Cómo funciona la prefila</h3>
+          <p>Entiende por qué llegar temprano cambia tus posibilidades incluso antes de la compra presencial real.</p>
+        </div>
+        <div class="card guide-card">
+          <h3>Qué hacer si quieres Huayna</h3>
+          <p>Huayna suele tensionarse antes que otras rutas. Aquí iremos publicando guías y señales para interpretarlo mejor.</p>
+        </div>
+        <div class="card guide-card">
+          <h3>Cómo leer la presión del día</h3>
+          <p>Te explicaremos cómo interpretar alertas, ritmo, agotamiento aproximado y rutas con mayor oportunidad.</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card seo-card">
+        <h2>Guía rápida para entradas presenciales a Machu Picchu</h2>
+        <p>
+          MachuLine está construyendo una herramienta para ayudar a quienes buscan entradas presenciales a Machu Picchu, especialmente cuando quieren rutas como Huayna Picchu, la ruta clásica o alternativas que suelen variar según la presión del día. La idea es reducir la incertidumbre sobre la prefila, la fila de compra y las probabilidades reales de conseguir la ruta deseada.
+        </p>
+        <p>
+          Si estás buscando información sobre fila Machu Picchu, entradas Machu Picchu presencial, comprar entradas en Aguas Calientes, disponibilidad de Huayna Picchu o tickets same day, esta plataforma irá profundizando cada vez más con datos reales del sistema y contenido útil para viajeros.
+        </p>
+      </div>
+    </section>
+
+    <section class="section">
       <h2>Reportes recientes</h2>
       <p class="lead">Señales de comunidad para ver cómo se está moviendo la fila en terreno.</p>
       <div id="fotos" class="grid report-grid">
         <div class="card"><p>Cargando reportes...</p></div>
+      </div>
+    </section>
+
+    <section class="section">
+      <div class="card cta-final">
+        <h2>Quédate conectado con MachuLine</h2>
+        <p>Si vas a viajar pronto, deja tu correo y te iremos avisando cuando detectemos señales útiles para tu ruta y tu fecha.</p>
+
+        <div class="lead-wrap">
+          <input type="email" id="email-footer" placeholder="Tu correo" />
+          <button onclick="document.getElementById('email').value = document.getElementById('email-footer').value; capturarLead();" style="margin-top:10px; width:100%;">
+            Quiero estar al tanto
+          </button>
+        </div>
       </div>
     </section>
 
