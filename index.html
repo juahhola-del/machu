@@ -1,715 +1,733 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Fila Machu Picchu</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Fila Machu Picchu</title>
 
-<script type="module">
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+  <script type="module">
+    import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const SUPABASE_URL = "https://klmikzfstasntvgmxsuj.supabase.co";
-const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
+    const SUPABASE_URL = "https://klmikzfstasntvgmxsuj.supabase.co";
+    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
 
-const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+    const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
-function fmt(v, fallback = "—") {
-  return v === null || v === undefined || v === "" ? fallback : v;
-}
-
-function routeColorByRisk(disponibles, riesgo) {
-  const r = String(riesgo || "").toLowerCase();
-  if (r.includes("crít") || r.includes("alto") || Number(disponibles) < 10) return "red";
-  if (r.includes("medio") || r.includes("riesgo") || Number(disponibles) < 30) return "orange";
-  return "green";
-}
-
-function severityClass(severity) {
-  const s = String(severity || "").toLowerCase();
-  if (s.includes("high") || s.includes("alta") || s.includes("crit")) return "red";
-  if (s.includes("medium") || s.includes("media") || s.includes("warn")) return "orange";
-  return "green";
-}
-
-// ---------- ESTADO PRINCIPAL ----------
-async function cargarEstado() {
-  const el = document.getElementById("estado");
-
-  try {
-    const { data, error } = await supabase
-      .from("v_home_live_status")
-      .select("*")
-      .limit(1);
-
-    if (error) throw error;
-
-    const s = data?.[0];
-    if (!s) {
-      el.innerHTML = `
-        <div class="card big">
-          <h2>Estado de hoy</h2>
-          <p>Aún no hay datos en vivo disponibles.</p>
-        </div>
-      `;
-      return;
+    function fmt(v, fallback = "—") {
+      return v === null || v === undefined || v === "" ? fallback : v;
     }
 
-    const disponibles = Number(s.turnos_disponibles || 0);
-    let estadoColor = "green";
-    let estadoTexto = "🟢 Buen margen";
+    function routeColorByRisk(disponibles, riesgo) {
+      const r = String(riesgo || "").toLowerCase();
+      const d = Number(disponibles || 0);
 
-    if (disponibles < 20) {
-      estadoColor = "red";
-      estadoTexto = "🔴 Alta presión";
-    } else if (disponibles < 50) {
-      estadoColor = "orange";
-      estadoTexto = "🟡 Riesgo medio";
+      if (r.includes("crít") || r.includes("alto") || d < 10) return "red";
+      if (r.includes("medio") || r.includes("riesgo") || d < 30) return "orange";
+      return "green";
     }
 
-    el.innerHTML = `
-      <div class="card hero-status">
-        <div class="status-head">
-          <div>
-            <div class="eyebrow">Estado en vivo</div>
-            <h2>Así viene hoy la compra presencial</h2>
-          </div>
-          <div class="estado-pill ${estadoColor}">${estadoTexto}</div>
-        </div>
-
-        <div class="grid stats-grid">
-          <div class="mini-stat">
-            <span>Turnos disponibles</span>
-            <strong>${fmt(s.turnos_disponibles)}</strong>
-          </div>
-          <div class="mini-stat">
-            <span>Turnos entregados</span>
-            <strong>${fmt(s.turnos_entregados)}</strong>
-          </div>
-          <div class="mini-stat">
-            <span>Fila estimada</span>
-            <strong>${fmt(s.fila_estimada)}</strong>
-          </div>
-          <div class="mini-stat">
-            <span>Última actualización</span>
-            <strong>${fmt(s.captured_at)}</strong>
-          </div>
-        </div>
-
-        <div class="grid info-grid">
-          <div class="info-box">
-            <span>Huayna</span>
-            <strong>${fmt(s.etiqueta_huayna)}</strong>
-          </div>
-          <div class="info-box">
-            <span>Clásico</span>
-            <strong>${fmt(s.etiqueta_clasico)}</strong>
-          </div>
-          <div class="info-box">
-            <span>Presión general</span>
-            <strong>${fmt(s.etiqueta_presion_total)}</strong>
-          </div>
-          <div class="info-box">
-            <span>Base recomendada</span>
-            <strong>${fmt(s.recomendacion_llegada_huayna)}</strong>
-          </div>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    console.error("Error cargando estado:", err);
-    el.innerHTML = `
-      <div class="card big">
-        <h2>Estado de hoy</h2>
-        <p>No se pudo cargar el estado en vivo.</p>
-      </div>
-    `;
-  }
-}
-
-// ---------- ALERTAS ----------
-async function cargarAlertas() {
-  const el = document.getElementById("alertas");
-
-  try {
-    const { data, error } = await supabase
-      .from("v_ticket_alerts_active")
-      .select("*")
-      .limit(6);
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      el.innerHTML = `
-        <div class="card">
-          <p>No hay alertas activas por ahora.</p>
-        </div>
-      `;
-      return;
+    function severityClass(severity) {
+      const s = String(severity || "").toLowerCase();
+      if (s.includes("high") || s.includes("alta") || s.includes("crit")) return "red";
+      if (s.includes("medium") || s.includes("media") || s.includes("warn")) return "orange";
+      return "green";
     }
 
-    let html = "";
-    data.forEach(a => {
-      const c = severityClass(a.severity);
-      html += `
-        <div class="card alert-card ${c}">
-          <div class="alert-title">${fmt(a.title, "Alerta")}</div>
-          <p>${fmt(a.message)}</p>
-          <small>${fmt(a.route_name, "General")}</small>
-        </div>
-      `;
+    function routeNameFromCode(code) {
+      const map = {
+        "ruta_1a": "Montaña Machu Picchu",
+        "ruta_1b": "Terraza Superior",
+        "ruta_2a": "Clásico",
+        "ruta_2b": "Terraza Inferior",
+        "ruta_3a": "Huayna Picchu",
+        "ruta_3b": "Otra ruta"
+      };
+      return map[code] || "Ruta";
+    }
+
+    async function cargarEstado() {
+      const el = document.getElementById("estado");
+
+      try {
+        const { data, error } = await supabase
+          .from("v_home_live_status")
+          .select("*")
+          .limit(1);
+
+        if (error) throw error;
+
+        const s = data?.[0];
+
+        if (!s) {
+          el.innerHTML = `
+            <div class="card big">
+              <h2>Estado de hoy</h2>
+              <p>Aún no hay datos disponibles.</p>
+            </div>
+          `;
+          return;
+        }
+
+        const disponibles = Number(s.turnos_disponibles || 0);
+
+        let estadoColor = "green";
+        let estadoTexto = "🟢 Buen margen";
+
+        if (disponibles < 20) {
+          estadoColor = "red";
+          estadoTexto = "🔴 Alta presión";
+        } else if (disponibles < 50) {
+          estadoColor = "orange";
+          estadoTexto = "🟡 Riesgo medio";
+        }
+
+        el.innerHTML = `
+          <div class="card hero-status">
+            <div class="status-head">
+              <div>
+                <div class="eyebrow">Estado en vivo</div>
+                <h2>Así viene hoy la compra presencial</h2>
+              </div>
+              <div class="estado-pill ${estadoColor}">${estadoTexto}</div>
+            </div>
+
+            <div class="grid stats-grid">
+              <div class="mini-stat">
+                <span>Disponibles reales</span>
+                <strong>${fmt(s.turnos_disponibles)}</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Turnos entregados</span>
+                <strong>${fmt(s.turnos_entregados)}</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Fila estimada</span>
+                <strong>${fmt(s.fila_estimada)}</strong>
+              </div>
+              <div class="mini-stat">
+                <span>Última actualización</span>
+                <strong>${fmt(s.captured_at)}</strong>
+              </div>
+            </div>
+
+            <div class="grid info-grid">
+              <div class="info-box">
+                <span>Huayna</span>
+                <strong>${fmt(s.etiqueta_huayna)}</strong>
+              </div>
+              <div class="info-box">
+                <span>Clásico</span>
+                <strong>${fmt(s.etiqueta_clasico)}</strong>
+              </div>
+              <div class="info-box">
+                <span>Presión general</span>
+                <strong>${fmt(s.etiqueta_presion_total)}</strong>
+              </div>
+              <div class="info-box">
+                <span>Fila</span>
+                <strong>${fmt(s.etiqueta_fila)}</strong>
+              </div>
+            </div>
+
+            <div class="grid two-col" style="margin-top:14px;">
+              <div class="subcard">
+                <h4>Lectura rápida</h4>
+                <p>${fmt(s.lectura_preventa)}</p>
+              </div>
+              <div class="subcard">
+                <h4>Recomendación base</h4>
+                <p>${fmt(s.recomendacion_llegada_huayna)}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error cargando estado:", err);
+        el.innerHTML = `
+          <div class="card big">
+            <h2>Estado de hoy</h2>
+            <p>No se pudo cargar el estado en vivo.</p>
+          </div>
+        `;
+      }
+    }
+
+    async function cargarAlertas() {
+      const el = document.getElementById("alertas");
+
+      try {
+        const { data, error } = await supabase
+          .from("v_ticket_alerts_active")
+          .select("*")
+          .limit(6);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          el.innerHTML = `
+            <div class="card">
+              <p>No hay alertas activas por ahora.</p>
+            </div>
+          `;
+          return;
+        }
+
+        let html = "";
+        data.forEach(a => {
+          const c = severityClass(a.severity);
+          html += `
+            <div class="card alert-card ${c}">
+              <div class="alert-title">${fmt(a.title, "Alerta")}</div>
+              <p>${fmt(a.message)}</p>
+              <small>${fmt(a.route_name, "General")}</small>
+            </div>
+          `;
+        });
+
+        el.innerHTML = html;
+      } catch (err) {
+        console.error("Error cargando alertas:", err);
+        el.innerHTML = `<div class="card"><p>No se pudieron cargar las alertas.</p></div>`;
+      }
+    }
+
+    async function cargarRutas() {
+      const el = document.getElementById("rutas");
+
+      try {
+        const { data, error } = await supabase
+          .from("v_home_routes_live")
+          .select("*");
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          el.innerHTML = `<div class="card"><p>Aún no hay rutas disponibles para mostrar.</p></div>`;
+          return;
+        }
+
+        let html = "";
+        data.forEach(r => {
+          const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
+
+          html += `
+            <div class="card ruta ${color}">
+              <div class="ruta-top">
+                <h3>${fmt(r.route_name)}</h3>
+                <span class="badge ${color}">${fmt(r.estado_ruta, r.riesgo_agotamiento)}</span>
+              </div>
+
+              <div class="ruta-grid">
+                <div><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
+                <div><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
+                <div><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
+                <div><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
+                <div><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
+                <div><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
+                <div><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
+                <div><span>Agotamiento</span><strong>${fmt(r.agotamiento_estimado)}</strong></div>
+              </div>
+
+              <p class="lectura">${fmt(r.lectura_rapida)}</p>
+            </div>
+          `;
+        });
+
+        el.innerHTML = html;
+      } catch (err) {
+        console.error("Error cargando rutas:", err);
+        el.innerHTML = `<div class="card"><p>No se pudieron cargar las rutas.</p></div>`;
+      }
+    }
+
+    async function simular() {
+      const fecha = document.getElementById("fecha").value;
+      const rutaDeseada = document.getElementById("ruta-simulador").value;
+      const el = document.getElementById("simulacion");
+
+      if (!fecha) {
+        el.innerHTML = `<div class="card"><p>Primero elige una fecha de visita.</p></div>`;
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase
+          .from("v_visit_date_full_experience")
+          .select("*")
+          .eq("visit_date", fecha)
+          .limit(1);
+
+        if (error) throw error;
+
+        const s = data?.[0];
+
+        if (!s) {
+          el.innerHTML = `<div class="card"><p>No hay simulación disponible para esa fecha.</p></div>`;
+          return;
+        }
+
+        const horaRecomendada =
+          rutaDeseada === "ruta_3a"
+            ? fmt(s.hora_recomendada_huayna)
+            : fmt(s.hora_recomendada_clasico);
+
+        el.innerHTML = `
+          <div class="card">
+            <div class="eyebrow">Planificación</div>
+            <h3>Tu estrategia para esa fecha</h3>
+
+            <div class="grid two-col">
+              <div class="subcard">
+                <h4>Prefila y compra</h4>
+                <p><b>Fecha de visita:</b> ${fmt(s.visit_date)}</p>
+                <p><b>Día para comprar presencial:</b> ${fmt(s.purchase_date)}</p>
+                <p><b>Fila de preventa estimada:</b> ${fmt(s.fila_preventa_estimada)}</p>
+                <p><b>Hora recomendada para llegar:</b> ${horaRecomendada}</p>
+                <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
+                <p><b>Fila de venta:</b> ${fmt(s.recomendacion_fila_venta)}</p>
+              </div>
+
+              <div class="subcard">
+                <h4>Cómo pinta el día de visita</h4>
+                <p><b>Temperatura:</b> ${fmt(s.avg_temp)}</p>
+                <p><b>Lluvia:</b> ${fmt(s.avg_rain)}</p>
+                <p><b>Nubosidad:</b> ${fmt(s.avg_clouds)}</p>
+                <p><b>Visibilidad:</b> ${fmt(s.visibilidad)}</p>
+                <p><b>Recomendación visual:</b> ${fmt(s.recomendacion_visual)}</p>
+                <p><b>Recomendación final:</b> ${fmt(s.recomendacion_final)}</p>
+              </div>
+            </div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error en simulación:", err);
+        el.innerHTML = `<div class="card"><p>No se pudo simular esa fecha.</p></div>`;
+      }
+    }
+
+    async function calcular() {
+      const personas = parseInt(document.getElementById("personas").value || "0", 10);
+      const hora = document.getElementById("hora").value;
+      const ruta = document.getElementById("ruta").value;
+      const notas = document.getElementById("comentario").value || null;
+      const el = document.getElementById("resultado");
+
+      if (!hora) {
+        el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
+        return;
+      }
+
+      try {
+        const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
+          p_report_date: new Date().toISOString().slice(0, 10),
+          p_arrival_time: hora,
+          p_people_ahead_estimate: personas,
+          p_desired_route_code: ruta,
+          p_desired_route_name: routeNameFromCode(ruta),
+          p_queue_speed: null,
+          p_notes: notas,
+          p_confidence_score: 80
+        });
+
+        if (error) throw error;
+
+        const r = data?.[0];
+
+        if (!r) {
+          el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
+          return;
+        }
+
+        const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
+
+        el.innerHTML = `
+          <div class="card resultado ${color}">
+            <div class="eyebrow">Situación real</div>
+            <h3>${fmt(r.probabilidad_estimada_pct)}% de probabilidad</h3>
+            <p><b>Nivel:</b> ${fmt(r.nivel_probabilidad)}</p>
+            <p><b>Riesgo:</b> ${fmt(r.riesgo_decision)}</p>
+            <p><b>Recomendación:</b> ${fmt(r.recomendacion_texto)}</p>
+            <p><b>Alternativa:</b> ${fmt(r.ruta_alternativa_sugerida)}</p>
+            <p><b>Mensaje:</b> ${fmt(r.mensaje_corto)}</p>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error calculando probabilidad:", err);
+        el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
+      }
+    }
+
+    async function cargarFotos() {
+      const el = document.getElementById("fotos");
+
+      try {
+        const { data, error } = await supabase
+          .from("v_queue_photo_feed")
+          .select("*")
+          .limit(6);
+
+        if (error) throw error;
+
+        if (!data || data.length === 0) {
+          el.innerHTML = `<div class="card"><p>Aún no hay reportes recientes.</p></div>`;
+          return;
+        }
+
+        let html = "";
+        data.forEach(f => {
+          html += `
+            <div class="card report-card">
+              ${f.image_url ? `<img src="${f.image_url}" alt="Reporte reciente" />` : ""}
+              <div class="report-body">
+                <p><b>Hora:</b> ${fmt(f.report_time)}</p>
+                <p><b>Personas delante:</b> ${fmt(f.people_ahead_estimate)}</p>
+                <p><b>Ruta buscada:</b> ${fmt(f.desired_route_name)}</p>
+                <p><b>Comentario:</b> ${fmt(f.comment)}</p>
+                <p><b>Confianza:</b> ${fmt(f.confidence_score)}</p>
+                <p><b>Logró ticket:</b> ${fmt(f.got_ticket)}</p>
+                <p><b>Logró ruta:</b> ${fmt(f.got_desired_route)}</p>
+              </div>
+            </div>
+          `;
+        });
+
+        el.innerHTML = html;
+      } catch (err) {
+        console.error("Error cargando reportes:", err);
+        el.innerHTML = `<div class="card"><p>No se pudieron cargar los reportes recientes.</p></div>`;
+      }
+    }
+
+    window.simular = simular;
+    window.calcular = calcular;
+
+    window.addEventListener("DOMContentLoaded", () => {
+      cargarEstado();
+      cargarAlertas();
+      cargarRutas();
+      cargarFotos();
     });
+  </script>
 
-    el.innerHTML = html;
-  } catch (err) {
-    console.error("Error cargando alertas:", err);
-    el.innerHTML = `<div class="card"><p>No se pudieron cargar las alertas.</p></div>`;
-  }
-}
-
-// ---------- RUTAS ----------
-async function cargarRutas() {
-  const el = document.getElementById("rutas");
-
-  try {
-    const { data, error } = await supabase
-      .from("v_home_routes_live")
-      .select("*");
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      el.innerHTML = `<div class="card"><p>Aún no hay rutas disponibles para mostrar.</p></div>`;
-      return;
+  <style>
+    :root{
+      --bg:#0b1120;
+      --bg-soft:#111827;
+      --card:#172033;
+      --card-2:#1e293b;
+      --text:#e5eefc;
+      --muted:#94a3b8;
+      --green:#22c55e;
+      --yellow:#facc15;
+      --red:#ef4444;
+      --line:rgba(255,255,255,.08);
     }
 
-    let html = "";
-    data.forEach(r => {
-      const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
+    *{box-sizing:border-box}
 
-      html += `
-        <div class="card ruta ${color}">
-          <div class="ruta-top">
-            <h3>${fmt(r.route_name)}</h3>
-            <span class="badge ${color}">${fmt(r.estado_ruta, r.riesgo_agotamiento)}</span>
-          </div>
-
-          <div class="ruta-grid">
-            <div><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
-            <div><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
-            <div><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
-            <div><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
-            <div><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
-            <div><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
-            <div><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-            <div><span>Agotamiento</span><strong>${fmt(r.agotamiento_estimado)}</strong></div>
-          </div>
-
-          <p class="lectura">${fmt(r.lectura_rapida)}</p>
-        </div>
-      `;
-    });
-
-    el.innerHTML = html;
-  } catch (err) {
-    console.error("Error cargando rutas:", err);
-    el.innerHTML = `<div class="card"><p>No se pudieron cargar las rutas.</p></div>`;
-  }
-}
-
-// ---------- SIMULADOR ----------
-async function simular() {
-  const fecha = document.getElementById("fecha").value;
-  const rutaDeseada = document.getElementById("ruta-simulador").value;
-  const el = document.getElementById("simulacion");
-
-  if (!fecha) {
-    el.innerHTML = `<div class="card"><p>Primero elige una fecha de visita.</p></div>`;
-    return;
-  }
-
-  try {
-    const { data, error } = await supabase
-      .from("v_visit_date_full_experience")
-      .select("*")
-      .eq("visit_date", fecha)
-      .limit(1);
-
-    if (error) throw error;
-
-    const s = data?.[0];
-    if (!s) {
-      el.innerHTML = `<div class="card"><p>No hay simulación disponible para esa fecha.</p></div>`;
-      return;
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      background:
+        radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 20%),
+        radial-gradient(circle at top left, rgba(250,204,21,.08), transparent 20%),
+        var(--bg);
+      color:var(--text);
     }
 
-    const horaRecomendada =
-      rutaDeseada === "ruta_3a"
-        ? fmt(s.hora_recomendada_huayna)
-        : fmt(s.hora_recomendada_clasico);
-
-    el.innerHTML = `
-      <div class="card">
-        <div class="eyebrow">Planificación</div>
-        <h3>Tu estrategia para esa fecha</h3>
-
-        <div class="grid two-col">
-          <div class="subcard">
-            <h4>Prefila y compra</h4>
-            <p><b>Fecha de visita:</b> ${fmt(s.visit_date)}</p>
-            <p><b>Día para comprar presencial:</b> ${fmt(s.purchase_date)}</p>
-            <p><b>Fila de preventa estimada:</b> ${fmt(s.fila_preventa_estimada)}</p>
-            <p><b>Hora recomendada para llegar:</b> ${horaRecomendada}</p>
-            <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
-            <p><b>Fila de venta:</b> ${fmt(s.recomendacion_fila_venta)}</p>
-          </div>
-
-          <div class="subcard">
-            <h4>Cómo pinta el día de visita</h4>
-            <p><b>Temperatura:</b> ${fmt(s.avg_temp)}</p>
-            <p><b>Lluvia:</b> ${fmt(s.avg_rain)}</p>
-            <p><b>Nubosidad:</b> ${fmt(s.avg_clouds)}</p>
-            <p><b>Visibilidad:</b> ${fmt(s.visibilidad)}</p>
-            <p><b>Recomendación visual:</b> ${fmt(s.recomendacion_visual)}</p>
-            <p><b>Recomendación final:</b> ${fmt(s.recomendacion_final)}</p>
-          </div>
-        </div>
-      </div>
-    `;
-  } catch (err) {
-    console.error("Error en simulación:", err);
-    el.innerHTML = `<div class="card"><p>No se pudo simular esa fecha.</p></div>`;
-  }
-}
-
-// ---------- ESTOY EN LA FILA ----------
-async function calcular() {
-  const personas = parseInt(document.getElementById("personas").value || "0", 10);
-  const hora = document.getElementById("hora").value;
-  const ruta = document.getElementById("ruta").value;
-  const comentario = document.getElementById("comentario").value || null;
-  const el = document.getElementById("resultado");
-
-  if (!hora) {
-    el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
-    return;
-  }
-
-  const routeNameMap = {
-    "ruta_3a": "Huayna",
-    "ruta_2a": "Clásico",
-    "ruta_1a": "Montaña Machu Picchu",
-    "ruta_1b": "Terraza Superior",
-    "ruta_2b": "Terraza Inferior",
-    "ruta_3b": "Otra ruta"
-  };
-
-  try {
-    const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
-      p_report_date: new Date().toISOString().slice(0, 10),
-      p_report_time: hora,
-      p_people_ahead_estimate: personas,
-      p_desired_route_code: ruta,
-      p_desired_route_name: routeNameMap[ruta] || "Ruta",
-      p_comment: comentario
-    });
-
-    if (error) throw error;
-
-    const r = data?.[0];
-    if (!r) {
-      el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
-      return;
+    .container{
+      max-width:1160px;
+      margin:0 auto;
+      padding:24px 18px 60px;
     }
 
-    const color = severityClass(r.riesgo || r.nivel_probabilidad || "");
-
-    el.innerHTML = `
-      <div class="card resultado ${color}">
-        <div class="eyebrow">Situación real</div>
-        <h3>${fmt(r.probabilidad_estimada_pct)}% de probabilidad</h3>
-        <p><b>Nivel:</b> ${fmt(r.nivel_probabilidad)}</p>
-        <p><b>Riesgo:</b> ${fmt(r.riesgo)}</p>
-        <p><b>Recomendación:</b> ${fmt(r.recomendacion_texto || r.recomendacion)}</p>
-        <p><b>Alternativa:</b> ${fmt(r.alternativa_sugerida)}</p>
-        <p><b>Mensaje:</b> ${fmt(r.mensaje_corto)}</p>
-      </div>
-    `;
-  } catch (err) {
-    console.error("Error calculando probabilidad:", err);
-    el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
-  }
-}
-
-// ---------- FEED ----------
-async function cargarFotos() {
-  const el = document.getElementById("fotos");
-
-  try {
-    const { data, error } = await supabase
-      .from("v_queue_photo_feed")
-      .select("*")
-      .limit(6);
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      el.innerHTML = `<div class="card"><p>Aún no hay reportes recientes.</p></div>`;
-      return;
+    .hero{
+      padding:32px 0 12px;
     }
 
-    let html = "";
-    data.forEach(f => {
-      html += `
-        <div class="card report-card">
-          ${f.image_url ? `<img src="${f.image_url}" alt="Reporte reciente" />` : ""}
-          <div class="report-body">
-            <p><b>Hora:</b> ${fmt(f.report_time)}</p>
-            <p><b>Personas delante:</b> ${fmt(f.people_ahead_estimate)}</p>
-            <p><b>Ruta buscada:</b> ${fmt(f.desired_route_name)}</p>
-            <p><b>Comentario:</b> ${fmt(f.comment)}</p>
-            <p><b>Confianza:</b> ${fmt(f.confidence_score)}</p>
-          </div>
-        </div>
-      `;
-    });
+    .hero-badge{
+      display:inline-block;
+      padding:8px 12px;
+      border:1px solid var(--line);
+      border-radius:999px;
+      background:rgba(255,255,255,.03);
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:16px;
+    }
 
-    el.innerHTML = html;
-  } catch (err) {
-    console.error("Error cargando reportes:", err);
-    el.innerHTML = `<div class="card"><p>No se pudieron cargar los reportes recientes.</p></div>`;
-  }
-}
+    h1{
+      font-size:42px;
+      line-height:1.05;
+      margin:0 0 12px;
+    }
 
-window.simular = simular;
-window.calcular = calcular;
+    .hero p{
+      color:var(--muted);
+      font-size:18px;
+      line-height:1.6;
+      max-width:900px;
+    }
 
-window.addEventListener("DOMContentLoaded", () => {
-  cargarEstado();
-  cargarAlertas();
-  cargarRutas();
-  cargarFotos();
-});
-</script>
+    .hero-cta{
+      display:flex;
+      gap:12px;
+      flex-wrap:wrap;
+      margin-top:18px;
+    }
 
-<style>
-:root{
-  --bg:#0b1120;
-  --bg-soft:#111827;
-  --card:#172033;
-  --card-2:#1e293b;
-  --text:#e5eefc;
-  --muted:#94a3b8;
-  --green:#22c55e;
-  --yellow:#facc15;
-  --red:#ef4444;
-  --line:rgba(255,255,255,.08);
-}
+    .anchor-btn, button{
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-weight:700;
+      cursor:pointer;
+    }
 
-*{box-sizing:border-box}
+    .anchor-btn{
+      text-decoration:none;
+      display:inline-block;
+    }
 
-body{
-  margin:0;
-  font-family:Inter,Arial,sans-serif;
-  background:
-    radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 20%),
-    radial-gradient(circle at top left, rgba(250,204,21,.08), transparent 20%),
-    var(--bg);
-  color:var(--text);
-}
+    .anchor-btn.primary, button{
+      background:var(--green);
+      color:#04130a;
+    }
 
-.container{
-  max-width:1160px;
-  margin:0 auto;
-  padding:24px 18px 60px;
-}
+    .anchor-btn.secondary{
+      background:transparent;
+      color:var(--text);
+      border:1px solid var(--line);
+    }
 
-.hero{
-  padding:32px 0 12px;
-}
+    .section{
+      margin-top:28px;
+    }
 
-.hero-badge{
-  display:inline-block;
-  padding:8px 12px;
-  border:1px solid var(--line);
-  border-radius:999px;
-  background:rgba(255,255,255,.03);
-  color:var(--muted);
-  font-size:13px;
-  margin-bottom:16px;
-}
+    .section h2{
+      font-size:24px;
+      margin:0 0 14px;
+    }
 
-h1{
-  font-size:42px;
-  line-height:1.05;
-  margin:0 0 12px;
-}
+    .section p.lead{
+      color:var(--muted);
+      margin-top:0;
+    }
 
-.hero p{
-  color:var(--muted);
-  font-size:18px;
-  line-height:1.6;
-  max-width:900px;
-}
+    .grid{
+      display:grid;
+      gap:14px;
+    }
 
-.hero-cta{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-top:18px;
-}
+    .three-col{
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
 
-.anchor-btn, button{
-  border:none;
-  border-radius:12px;
-  padding:12px 16px;
-  font-weight:700;
-  cursor:pointer;
-}
+    .two-col{
+      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
+    }
 
-.anchor-btn{
-  text-decoration:none;
-  display:inline-block;
-}
+    .card{
+      background:linear-gradient(180deg, var(--card), var(--card-2));
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.18);
+    }
 
-.anchor-btn.primary, button{
-  background:var(--green);
-  color:#04130a;
-}
+    .big{
+      text-align:center;
+    }
 
-.anchor-btn.secondary{
-  background:transparent;
-  color:var(--text);
-  border:1px solid var(--line);
-}
+    .eyebrow{
+      color:var(--muted);
+      text-transform:uppercase;
+      font-size:12px;
+      letter-spacing:.08em;
+      margin-bottom:8px;
+    }
 
-.section{
-  margin-top:28px;
-}
+    .hero-status .status-head{
+      display:flex;
+      gap:16px;
+      justify-content:space-between;
+      align-items:flex-start;
+      margin-bottom:18px;
+      flex-wrap:wrap;
+    }
 
-.section h2{
-  font-size:24px;
-  margin:0 0 14px;
-}
+    .estado-pill, .badge{
+      padding:10px 14px;
+      border-radius:999px;
+      font-weight:700;
+      font-size:14px;
+      display:inline-block;
+    }
 
-.section p.lead{
-  color:var(--muted);
-  margin-top:0;
-}
+    .green{color:var(--green)}
+    .orange{color:var(--yellow)}
+    .red{color:var(--red)}
 
-.grid{
-  display:grid;
-  gap:14px;
-}
+    .estado-pill.green, .badge.green{
+      background:rgba(34,197,94,.14);
+      color:var(--green);
+    }
 
-.three-col{
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-}
+    .estado-pill.orange, .badge.orange{
+      background:rgba(250,204,21,.12);
+      color:var(--yellow);
+    }
 
-.two-col{
-  grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-}
+    .estado-pill.red, .badge.red{
+      background:rgba(239,68,68,.12);
+      color:var(--red);
+    }
 
-.card{
-  background:linear-gradient(180deg, var(--card), var(--card-2));
-  border:1px solid var(--line);
-  border-radius:18px;
-  padding:18px;
-  box-shadow:0 10px 30px rgba(0,0,0,.18);
-}
+    .stats-grid{
+      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
+      margin-bottom:14px;
+    }
 
-.big{
-  text-align:center;
-}
+    .info-grid{
+      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    }
 
-.eyebrow{
-  color:var(--muted);
-  text-transform:uppercase;
-  font-size:12px;
-  letter-spacing:.08em;
-  margin-bottom:8px;
-}
+    .mini-stat, .info-box, .subcard{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:14px;
+      padding:14px;
+    }
 
-.hero-status .status-head{
-  display:flex;
-  gap:16px;
-  justify-content:space-between;
-  align-items:flex-start;
-  margin-bottom:18px;
-  flex-wrap:wrap;
-}
+    .mini-stat span, .info-box span, .ruta-grid span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
 
-.estado-pill, .badge{
-  padding:10px 14px;
-  border-radius:999px;
-  font-weight:700;
-  font-size:14px;
-  display:inline-block;
-}
+    .mini-stat strong, .info-box strong{
+      font-size:22px;
+    }
 
-.green{color:var(--green)}
-.orange{color:var(--yellow)}
-.red{color:var(--red)}
+    .how-card h3{
+      margin-top:0;
+    }
 
-.estado-pill.green, .badge.green{
-  background:rgba(34,197,94,.14);
-  color:var(--green);
-}
+    .how-card p{
+      color:var(--muted);
+      margin-bottom:0;
+    }
 
-.estado-pill.orange, .badge.orange{
-  background:rgba(250,204,21,.12);
-  color:var(--yellow);
-}
+    .alert-grid{
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+    }
 
-.estado-pill.red, .badge.red{
-  background:rgba(239,68,68,.12);
-  color:var(--red);
-}
+    .alert-card{
+      border-left:4px solid transparent;
+    }
+    .alert-card.red{border-left-color:var(--red)}
+    .alert-card.orange{border-left-color:var(--yellow)}
+    .alert-card.green{border-left-color:var(--green)}
 
-.stats-grid{
-  grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
-  margin-bottom:14px;
-}
+    .alert-title{
+      font-weight:800;
+      margin-bottom:8px;
+    }
 
-.info-grid{
-  grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
-}
+    .rutas-grid{
+      grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
+    }
 
-.mini-stat, .info-box, .subcard{
-  background:rgba(255,255,255,.03);
-  border:1px solid var(--line);
-  border-radius:14px;
-  padding:14px;
-}
+    .ruta{
+      border-left:4px solid transparent;
+    }
+    .ruta.green{border-left-color:var(--green)}
+    .ruta.orange{border-left-color:var(--yellow)}
+    .ruta.red{border-left-color:var(--red)}
 
-.mini-stat span, .info-box span, .ruta-grid span{
-  display:block;
-  color:var(--muted);
-  font-size:13px;
-  margin-bottom:6px;
-}
+    .ruta-top{
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:12px;
+      margin-bottom:14px;
+    }
 
-.mini-stat strong, .info-box strong{
-  font-size:22px;
-}
+    .ruta-top h3{
+      margin:0;
+    }
 
-.how-card h3{
-  margin-top:0;
-}
+    .ruta-grid{
+      display:grid;
+      grid-template-columns:repeat(2,minmax(0,1fr));
+      gap:10px;
+    }
 
-.how-card p{
-  color:var(--muted);
-  margin-bottom:0;
-}
+    .ruta-grid strong{
+      font-size:18px;
+    }
 
-.alert-grid{
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-}
+    .lectura{
+      margin:14px 0 0;
+      color:var(--muted);
+    }
 
-.alert-card{
-  border-left:4px solid transparent;
-}
-.alert-card.red{border-left-color:var(--red)}
-.alert-card.orange{border-left-color:var(--yellow)}
-.alert-card.green{border-left-color:var(--green)}
+    .form-grid{
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
+      gap:12px;
+      margin-bottom:12px;
+    }
 
-.alert-title{
-  font-weight:800;
-  margin-bottom:8px;
-}
+    input, select, textarea{
+      width:100%;
+      background:#0f172a;
+      color:var(--text);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px 14px;
+      font-size:15px;
+    }
 
-.rutas-grid{
-  grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
-}
+    textarea{
+      min-height:110px;
+      resize:vertical;
+    }
 
-.ruta{
-  border-left:4px solid transparent;
-}
-.ruta.green{border-left-color:var(--green)}
-.ruta.orange{border-left-color:var(--yellow)}
-.ruta.red{border-left-color:var(--red)}
+    .resultado.red{border-left:4px solid var(--red)}
+    .resultado.orange{border-left:4px solid var(--yellow)}
+    .resultado.green{border-left:4px solid var(--green)}
 
-.ruta-top{
-  display:flex;
-  justify-content:space-between;
-  align-items:flex-start;
-  gap:12px;
-  margin-bottom:14px;
-}
+    .report-grid{
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    }
 
-.ruta-top h3{
-  margin:0;
-}
+    .report-card img{
+      width:100%;
+      display:block;
+      border-radius:12px;
+      margin-bottom:12px;
+      max-height:220px;
+      object-fit:cover;
+    }
 
-.ruta-grid{
-  display:grid;
-  grid-template-columns:repeat(2,minmax(0,1fr));
-  gap:10px;
-}
+    .report-body p{
+      margin:.45rem 0;
+    }
 
-.ruta-grid strong{
-  font-size:18px;
-}
+    .footer-note{
+      margin-top:36px;
+      color:var(--muted);
+      font-size:14px;
+      line-height:1.6;
+    }
 
-.lectura{
-  margin:14px 0 0;
-  color:var(--muted);
-}
-
-.form-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-  gap:12px;
-  margin-bottom:12px;
-}
-
-input, select, textarea{
-  width:100%;
-  background:#0f172a;
-  color:var(--text);
-  border:1px solid var(--line);
-  border-radius:12px;
-  padding:12px 14px;
-  font-size:15px;
-}
-
-textarea{
-  min-height:110px;
-  resize:vertical;
-}
-
-.resultado.red{border-left:4px solid var(--red)}
-.resultado.orange{border-left:4px solid var(--yellow)}
-.resultado.green{border-left:4px solid var(--green)}
-
-.report-grid{
-  grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-}
-
-.report-card img{
-  width:100%;
-  display:block;
-  border-radius:12px;
-  margin-bottom:12px;
-  max-height:220px;
-  object-fit:cover;
-}
-
-.report-body p{
-  margin:.45rem 0;
-}
-
-.footer-note{
-  margin-top:36px;
-  color:var(--muted);
-  font-size:14px;
-  line-height:1.6;
-}
-
-@media (max-width:720px){
-  h1{font-size:34px}
-  .hero p{font-size:16px}
-}
-</style>
+    @media (max-width:720px){
+      h1{font-size:34px}
+      .hero p{font-size:16px}
+    }
+  </style>
 </head>
 
 <body>
@@ -813,7 +831,7 @@ textarea{
           <div>
             <label for="ruta">Ruta objetivo</label>
             <select id="ruta">
-              <option value="ruta_3a">Huayna</option>
+              <option value="ruta_3a">Huayna Picchu</option>
               <option value="ruta_2a">Clásico</option>
               <option value="ruta_1a">Montaña Machu Picchu</option>
               <option value="ruta_1b">Terraza Superior</option>
@@ -843,8 +861,11 @@ textarea{
     </section>
 
     <div class="footer-note">
-      Tarea técnica pendiente importante: verificar que Supabase esté acumulando correctamente el histórico del scraper y que los snapshots realmente se estén guardando como base de la predicción.
+      Tarea técnica pendiente importante: verificar de forma periódica que Supabase siga acumulando correctamente el histórico del scraper y que los snapshots sigan siendo la base real de la predicción.
     </div>
+  </div>
+</body>
+</html>
   </div>
 </body>
 </html>
