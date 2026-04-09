@@ -185,19 +185,19 @@
           </div>
 
           <div class="grid clima-grid">
-            <div class="mini-stat">
+            <div class="mini-stat compact">
               <span>Estado</span>
               <strong>${fmt(estado)}</strong>
             </div>
-            <div class="mini-stat">
+            <div class="mini-stat compact">
               <span>Temperatura</span>
               <strong>${fmt(temp)}°C</strong>
             </div>
-            <div class="mini-stat">
+            <div class="mini-stat compact">
               <span>Humedad</span>
               <strong>${humedadLabel(humidity)}</strong>
             </div>
-            <div class="mini-stat">
+            <div class="mini-stat compact">
               <span>Visibilidad</span>
               <strong>${visibilidad}</strong>
             </div>
@@ -318,39 +318,39 @@
               <div class="estado-pill ${estadoColor}">${estadoTexto}</div>
             </div>
 
-            <div class="grid stats-grid">
-              <div class="mini-stat">
+            <div class="grid stats-grid compact-grid">
+              <div class="mini-stat inline-stat">
                 <span>Disponibles reales</span>
                 <strong>${fmt(s.turnos_disponibles)}</strong>
               </div>
-              <div class="mini-stat">
+              <div class="mini-stat inline-stat">
                 <span>Turnos entregados</span>
                 <strong>${fmt(s.turnos_entregados)}</strong>
               </div>
-              <div class="mini-stat">
+              <div class="mini-stat inline-stat">
                 <span>Fila estimada</span>
                 <strong>${fmt(s.fila_estimada)}</strong>
               </div>
-              <div class="mini-stat">
+              <div class="mini-stat inline-stat">
                 <span>Última actualización</span>
                 <strong>${formatPeruDateTime(s.captured_at)}</strong>
               </div>
             </div>
 
-            <div class="grid info-grid">
-              <div class="info-box">
+            <div class="grid info-grid compact-grid">
+              <div class="info-box inline-stat">
                 <span>Huayna</span>
                 <strong>${fmt(s.etiqueta_huayna)}</strong>
               </div>
-              <div class="info-box">
+              <div class="info-box inline-stat">
                 <span>Clásico</span>
                 <strong>${fmt(s.etiqueta_clasico)}</strong>
               </div>
-              <div class="info-box">
+              <div class="info-box inline-stat">
                 <span>Presión general</span>
                 <strong>${fmt(s.etiqueta_presion_total)}</strong>
               </div>
-              <div class="info-box">
+              <div class="info-box inline-stat">
                 <span>Fila</span>
                 <strong>${fmt(s.etiqueta_fila)}</strong>
               </div>
@@ -538,15 +538,15 @@
                 <span class="badge ${color}">${estadoTexto}</span>
               </div>
 
-              <div class="ruta-grid">
-                <div><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
-                <div><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
-                <div><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
-                <div><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
-                <div><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
-                <div><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
-                <div><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-                <div><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
+              <div class="ruta-grid compact-route-grid">
+                <div class="inline-data"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
+                <div class="inline-data"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
+                <div class="inline-data"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
+                <div class="inline-data"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
+                <div class="inline-data"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
+                <div class="inline-data"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
+                <div class="inline-data"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
+                <div class="inline-data"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
               </div>
 
               <p class="lectura">${fmt(r.lectura_rapida)}</p>
@@ -712,7 +712,6 @@
   <style>
     :root{
       --bg:#0b1120;
-      --bg-soft:#111827;
       --card:#172033;
       --card-2:#1e293b;
       --text:#e5eefc;
@@ -725,9 +724,7 @@
 
     *{box-sizing:border-box}
 
-    html {
-      scroll-behavior: smooth;
-    }
+    html { scroll-behavior: smooth; }
 
     body{
       margin:0;
@@ -747,7 +744,7 @@
 
     .hero{
       position: relative;
-      min-height: 78vh;
+      min-height: 64vh;
       border-radius: 28px;
       overflow: hidden;
       background-image: url('/hero.png');
@@ -764,7 +761,7 @@
       content:"";
       position:absolute;
       inset:0;
-      background: linear-gradient(180deg, rgba(0,0,0,.42), rgba(11,17,32,.88));
+      background: linear-gradient(180deg, rgba(0,0,0,.35), rgba(11,17,32,.82));
     }
 
     .hero-inner{
@@ -773,7 +770,7 @@
       width: 100%;
       padding: 44px 30px;
       display:grid;
-      grid-template-columns: 1.3fr 0.9fr;
+      grid-template-columns: 1fr 0.9fr;
       gap: 22px;
       align-items: end;
     }
@@ -781,92 +778,25 @@
     .brand-lockup{
       display:flex;
       align-items:center;
-      margin-bottom:22px;
+      margin-bottom:12px;
     }
 
     .brand-lockup img{
-      width:150px;
+      width:190px;
       height:auto;
       object-fit:contain;
       display:block;
     }
 
-    .hero-badge{
-      display:inline-block;
-      padding:8px 12px;
-      border:1px solid rgba(255,255,255,.16);
-      border-radius:999px;
-      background:rgba(255,255,255,.06);
-      color:#dbe7ff;
-      font-size:13px;
-      margin-bottom:16px;
+    .hero-copy{
+      max-width:680px;
     }
 
-    h1{
-      font-size:52px;
-      line-height:1.02;
-      margin:0 0 14px;
-    }
-
-    .hero p{
+    .hero-copy p{
       color:#dbe7ff;
       font-size:19px;
       line-height:1.6;
-      max-width:760px;
       margin:0;
-    }
-
-    .hero-cta{
-      display:flex;
-      gap:12px;
-      flex-wrap:wrap;
-      margin-top:22px;
-    }
-
-    .anchor-btn, button{
-      border:none;
-      border-radius:12px;
-      padding:12px 16px;
-      font-weight:700;
-      cursor:pointer;
-      font-family:inherit;
-    }
-
-    .anchor-btn{
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-    }
-
-    .anchor-btn.primary, button{
-      background:var(--green);
-      color:#04130a;
-    }
-
-    .anchor-btn.secondary{
-      background:transparent;
-      color:var(--text);
-      border:1px solid rgba(255,255,255,.18);
-    }
-
-    .anchor-btn.whatsapp-btn{
-      background:#1d4ed8;
-      color:white;
-      border:1px solid rgba(255,255,255,.12);
-    }
-
-    .small-wa-btn{
-      padding:10px 14px;
-      font-size:14px;
-      min-height:auto;
-      width:auto;
-    }
-
-    .hero-side{
-      display:flex;
-      flex-direction:column;
-      gap:14px;
     }
 
     .section{
@@ -904,9 +834,7 @@
       box-shadow:0 10px 30px rgba(0,0,0,.18);
     }
 
-    .big{
-      text-align:center;
-    }
+    .big{ text-align:center; }
 
     .eyebrow{
       color:var(--muted);
@@ -916,7 +844,7 @@
       margin-bottom:8px;
     }
 
-    .hero-status .status-head{
+    .status-head{
       display:flex;
       gap:16px;
       justify-content:space-between;
@@ -952,13 +880,16 @@
       color:var(--red);
     }
 
+    .compact-grid{
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+    }
+
     .stats-grid{
-      grid-template-columns:repeat(auto-fit,minmax(180px,1fr));
       margin-bottom:14px;
     }
 
     .info-grid{
-      grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
     }
 
     .mini-stat, .info-box, .subcard{
@@ -968,24 +899,30 @@
       padding:14px;
     }
 
-    .mini-stat span, .info-box span, .ruta-grid span{
+    .inline-stat{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .inline-stat span{
       display:block;
       color:var(--muted);
       font-size:13px;
-      margin-bottom:6px;
+      margin-bottom:0;
     }
 
-    .mini-stat strong, .info-box strong{
-      font-size:22px;
+    .inline-stat strong{
+      font-size:18px;
+      text-align:right;
     }
 
     .alert-grid{
       grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     }
 
-    .alert-card{
-      border-left:4px solid transparent;
-    }
+    .alert-card{ border-left:4px solid transparent; }
     .alert-card.red{border-left-color:var(--red)}
     .alert-card.orange{border-left-color:var(--yellow)}
     .alert-card.green{border-left-color:var(--green)}
@@ -999,9 +936,7 @@
       grid-template-columns:repeat(auto-fit,minmax(290px,1fr));
     }
 
-    .ruta{
-      border-left:4px solid transparent;
-    }
+    .ruta{ border-left:4px solid transparent; }
     .ruta.green{border-left-color:var(--green)}
     .ruta.orange{border-left-color:var(--yellow)}
     .ruta.red{border-left-color:var(--red)}
@@ -1014,18 +949,33 @@
       margin-bottom:14px;
     }
 
-    .ruta-top h3{
-      margin:0;
-    }
+    .ruta-top h3{ margin:0; }
 
-    .ruta-grid{
+    .compact-route-grid{
       display:grid;
       grid-template-columns:repeat(2,minmax(0,1fr));
       gap:10px;
     }
 
-    .ruta-grid strong{
-      font-size:18px;
+    .inline-data{
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
+      border-radius:12px;
+      padding:12px;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:12px;
+    }
+
+    .inline-data span{
+      color:var(--muted);
+      font-size:13px;
+    }
+
+    .inline-data strong{
+      font-size:16px;
+      text-align:right;
     }
 
     .lectura{
@@ -1055,6 +1005,17 @@
       resize:vertical;
     }
 
+    button{
+      border:none;
+      border-radius:12px;
+      padding:12px 16px;
+      font-weight:700;
+      cursor:pointer;
+      font-family:inherit;
+      background:var(--green);
+      color:#04130a;
+    }
+
     .resultado.red{border-left:4px solid var(--red)}
     .resultado.orange{border-left:4px solid var(--yellow)}
     .resultado.green{border-left:4px solid var(--green)}
@@ -1067,9 +1028,7 @@
       margin-bottom:14px;
     }
 
-    .clima-head h3{
-      margin:0;
-    }
+    .clima-head h3{ margin:0; }
 
     .clima-icon{
       font-size:34px;
@@ -1078,6 +1037,21 @@
 
     .clima-grid{
       grid-template-columns:repeat(2,minmax(0,1fr));
+    }
+
+    .compact{
+      text-align:left;
+    }
+
+    .compact span{
+      display:block;
+      color:var(--muted);
+      font-size:13px;
+      margin-bottom:6px;
+    }
+
+    .compact strong{
+      font-size:18px;
     }
 
     .clima-note{
@@ -1153,17 +1127,6 @@
       margin: 0 0 16px;
     }
 
-    .altitude-product-highlight {
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.2);
-      color: #ecfdf5;
-      padding: 14px 16px;
-      border-radius: 16px;
-      margin-bottom: 16px;
-      font-size: 18px;
-      line-height: 1.45;
-    }
-
     .altitude-product-copy {
       font-size: 17px;
       line-height: 1.6;
@@ -1172,7 +1135,7 @@
     }
 
     .altitude-product-actions {
-      margin-bottom: 16px;
+      margin-bottom: 0;
     }
 
     .altitude-product-btn {
@@ -1188,16 +1151,7 @@
       text-decoration: none;
     }
 
-    .altitude-product-note {
-      color: #94a3b8;
-      font-size: 14px;
-      line-height: 1.5;
-      margin: 0;
-    }
-
-    .lead-card{
-      text-align:center;
-    }
+    .lead-card{ text-align:center; }
 
     .lead-wrap{
       max-width:760px;
@@ -1232,15 +1186,81 @@
       line-height:1.5;
     }
 
-    .news-card h2{
+    .news-card h2,
+    .community-card h2,
+    .report-card h3{
       margin-top:0;
-      margin-bottom:10px;
     }
 
-    .news-card p{
+    .news-card p,
+    .community-card p,
+    .guide-card p,
+    .seo-card p{
       color:var(--muted);
       line-height:1.7;
-      margin-bottom:16px;
+    }
+
+    .guide-card{
+      cursor:pointer;
+      transition:transform .18s ease, border-color .18s ease;
+      position:relative;
+      padding-right:52px;
+    }
+
+    .guide-card:hover{
+      transform:translateY(-3px);
+      border-color:rgba(255,255,255,.18);
+    }
+
+    .guide-arrow{
+      position:absolute;
+      right:18px;
+      top:20px;
+      color:#dbe7ff;
+      font-size:22px;
+      line-height:1;
+    }
+
+    .seo-home-card{
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:16px;
+    }
+
+    .seo-home-card h2{
+      margin:0;
+      font-size:22px;
+    }
+
+    .seo-home-card .guide-arrow{
+      position:static;
+      font-size:24px;
+      flex-shrink:0;
+    }
+
+    .community-card{
+      text-align:center;
+    }
+
+    .community-card p{
+      margin-bottom:14px;
+    }
+
+    .anchor-btn{
+      text-decoration:none;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border-radius:12px;
+      padding:10px 14px;
+      font-weight:700;
+    }
+
+    .whatsapp-btn{
+      background:#1d4ed8;
+      color:#fff;
+      border:1px solid rgba(255,255,255,.12);
     }
 
     .report-grid{
@@ -1256,38 +1276,30 @@
       object-fit:cover;
     }
 
-    .report-card h3{
-      margin-top:0;
-      margin-bottom:8px;
+    .report-meta{
+      display:grid;
+      gap:8px;
+      margin-top:10px;
     }
 
-    .community-card{
-      text-align:center;
+    .report-meta-item{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:10px 12px;
+      border-radius:12px;
+      background:rgba(255,255,255,.03);
+      border:1px solid var(--line);
     }
 
-    .community-card h2{
-      margin-top:0;
-      margin-bottom:10px;
-    }
-
-    .community-card p{
+    .report-meta-item span{
       color:var(--muted);
-      line-height:1.6;
-      margin-bottom:14px;
+      font-size:13px;
     }
 
-    .guide-card h3{
-      margin-top:0;
-    }
-
-    .guide-card p{
-      color:var(--muted);
-      margin-bottom:0;
-    }
-
-    .seo-card p{
-      color:var(--muted);
-      line-height:1.7;
+    .report-meta-item strong{
+      font-size:14px;
+      text-align:right;
     }
 
     @media (max-width:980px){
@@ -1318,9 +1330,22 @@
     }
 
     @media (max-width:720px){
-      h1{font-size:38px}
-      .hero p{font-size:16px}
-      .brand-lockup img{width:120px}
+      .brand-lockup img{width:150px}
+      .hero-copy p{font-size:16px}
+      .compact-route-grid{
+        grid-template-columns:1fr;
+      }
+      .inline-stat,
+      .inline-data,
+      .report-meta-item{
+        flex-direction:column;
+        align-items:flex-start;
+      }
+      .inline-stat strong,
+      .inline-data strong,
+      .report-meta-item strong{
+        text-align:left;
+      }
     }
   </style>
 </head>
@@ -1329,22 +1354,13 @@
   <div class="container">
     <section class="hero">
       <div class="hero-inner">
-        <div>
+        <div class="hero-copy">
           <div class="brand-lockup">
             <img src="/Logo.png" alt="MachuLine" />
           </div>
-
-          <div class="hero-badge">Predicción de prefila + rutas + señales en vivo</div>
-          <h1>MachuLine</h1>
           <p>
             Entiende la prefila, la fila de compra y la presión real por ruta en Machu Picchu para decidir mejor cuándo llegar y cómo moverte.
           </p>
-
-          <div class="hero-cta">
-            <a href="#estado-section" class="anchor-btn primary">Ver estado de hoy</a>
-            <a href="#simulador-section" class="anchor-btn secondary">Simular mi fecha</a>
-            <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">Unirme a la comunidad</a>
-          </div>
         </div>
 
         <div id="clima" class="card">
@@ -1360,7 +1376,6 @@
         <p>
           La mayoría de la gente llega a la compra presencial sin entender bien la prefila, la presión real del día ni qué ruta se tensiona primero. MachuLine busca reducir esa incertidumbre con señales en vivo, lectura del sistema y mejores referencias para planificar.
         </p>
-        <a href="#guia-section" class="anchor-btn secondary">Leer guía completa</a>
       </div>
     </section>
 
@@ -1388,15 +1403,11 @@
 
           <h2>¿Vas a subir a Machu Picchu?</h2>
           <p class="altitude-product-lead">
-            Estamos probando una solución pensada para ayudar a viajeros a prepararse mejor para la altura antes de su visita.
+            Buscamos personas interesadas en probar una muestra gratis en Cusco antes de su visita.
           </p>
 
-          <div class="altitude-product-highlight">
-            <strong>Buscamos personas interesadas en probar una muestra gratis en Cusco.</strong>
-          </div>
-
           <p class="altitude-product-copy">
-            Es un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura. Ingredientes conceptuales: mate de coca, jengibre, ginseng, limón y miel.
+            Es un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura. Ingredientes: mate de coca, jengibre, ginseng, limón y miel.
           </p>
 
           <div class="altitude-product-actions">
@@ -1404,10 +1415,6 @@
               Quiero una muestra gratis
             </a>
           </div>
-
-          <p class="altitude-product-note">
-            Por ahora esto no es una venta. Es una validación de interés para viajeros que visiten Cusco en las próximas semanas.
-          </p>
         </div>
       </div>
     </section>
@@ -1485,10 +1492,6 @@
             Quiero recibir alertas
           </button>
         </div>
-
-        <p class="small-muted">
-          También podremos avisarte de nuevas herramientas, contenido útil, comunidad y avances relacionados con productos pensados para viajeros.
-        </p>
       </div>
     </section>
 
@@ -1536,14 +1539,17 @@
 
       <div class="grid three-col">
         <div class="card guide-card">
+          <span class="guide-arrow">→</span>
           <h3>Cómo funciona la prefila</h3>
           <p>Entiende por qué llegar temprano cambia tus posibilidades incluso antes de la compra presencial real.</p>
         </div>
         <div class="card guide-card">
+          <span class="guide-arrow">→</span>
           <h3>Qué hacer si quieres Huayna</h3>
           <p>Huayna suele tensionarse antes que otras rutas. Aquí iremos publicando guías y señales para interpretarlo mejor.</p>
         </div>
         <div class="card guide-card">
+          <span class="guide-arrow">→</span>
           <h3>Cómo leer la presión del día</h3>
           <p>Te explicaremos cómo interpretar alertas, ritmo, agotamiento aproximado y rutas con mayor oportunidad.</p>
         </div>
@@ -1551,48 +1557,61 @@
     </section>
 
     <section class="section">
-      <div class="card seo-card">
+      <div class="card seo-home-card">
         <h2>Guía rápida para entradas presenciales a Machu Picchu</h2>
-        <p>
-          MachuLine está construyendo una herramienta para ayudar a quienes buscan entradas presenciales a Machu Picchu, especialmente cuando quieren rutas como Huayna Picchu, la ruta clásica o alternativas que suelen variar según la presión del día. La idea es reducir la incertidumbre sobre la prefila, la fila de compra y las probabilidades reales de conseguir la ruta deseada.
-        </p>
-        <p>
-          Si estás buscando información sobre fila Machu Picchu, entradas Machu Picchu presencial, comprar entradas en Aguas Calientes, disponibilidad de Huayna Picchu o tickets same day, esta plataforma irá profundizando cada vez más con datos reales del sistema y contenido útil para viajeros.
-        </p>
+        <span class="guide-arrow">→</span>
       </div>
     </section>
 
     <section class="section">
       <div class="card community-card">
         <h2>Únete a la comunidad</h2>
-        <p>Grupo de WhatsApp para resolver dudas entre todos.</p>
-        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn small-wa-btn">
+        <p>Para resolver dudas.</p>
+        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">
           WhatsApp
         </a>
       </div>
     </section>
 
     <section class="section">
-      <h2>Reportes y referencias visuales</h2>
-      <p class="lead">Mientras seguimos capturando más evidencia real, aquí dejamos referencias visuales de fila y prefila.</p>
+      <h2>Reportes de la comunidad</h2>
+      <p class="lead">Mientras activamos la subida de imágenes, aquí mostramos ejemplos del tipo de información que podremos reunir desde “Ya estoy en la fila”.</p>
 
       <div class="grid report-grid">
         <div class="card report-card">
-          <img src="/1.png" alt="Referencia visual de fila 1" />
-          <h3>Referencia de fila</h3>
-          <p class="small-muted">Imagen de apoyo para entender mejor la dinámica de espera y presión presencial.</p>
+          <img src="/1.png" alt="Reporte visual 1" />
+          <h3>Reporte 1</h3>
+          <div class="report-meta">
+            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
+            <div class="report-meta-item"><span>Hora</span><strong>06:40</strong></div>
+            <div class="report-meta-item"><span>Personas</span><strong>100</strong></div>
+            <div class="report-meta-item"><span>Ruta</span><strong>Huayna Picchu</strong></div>
+            <div class="report-meta-item"><span>Comentario</span><strong>Fila larga desde temprano y avance lento.</strong></div>
+          </div>
         </div>
 
         <div class="card report-card">
-          <img src="/2.png" alt="Referencia visual de fila 2" />
-          <h3>Referencia de prefila</h3>
-          <p class="small-muted">Apoyo visual para comunidad, contexto y futura comparación con reportes propios.</p>
+          <img src="/2.png" alt="Reporte visual 2" />
+          <h3>Reporte 2</h3>
+          <div class="report-meta">
+            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
+            <div class="report-meta-item"><span>Hora</span><strong>07:15</strong></div>
+            <div class="report-meta-item"><span>Personas</span><strong>200</strong></div>
+            <div class="report-meta-item"><span>Ruta</span><strong>Clásico</strong></div>
+            <div class="report-meta-item"><span>Comentario</span><strong>Alta presión y mucha gente esperando.</strong></div>
+          </div>
         </div>
 
         <div class="card report-card">
-          <img src="/3.png" alt="Referencia visual de fila 3" />
-          <h3>Referencia adicional</h3>
-          <p class="small-muted">Útil para hacer más cercana la herramienta mientras crece la base de datos real.</p>
+          <img src="/3.png" alt="Reporte visual 3" />
+          <h3>Reporte 3</h3>
+          <div class="report-meta">
+            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
+            <div class="report-meta-item"><span>Hora</span><strong>08:05</strong></div>
+            <div class="report-meta-item"><span>Personas</span><strong>300</strong></div>
+            <div class="report-meta-item"><span>Ruta</span><strong>Montaña Machu Picchu</strong></div>
+            <div class="report-meta-item"><span>Comentario</span><strong>La fila se ve extensa y con poco movimiento.</strong></div>
+          </div>
         </div>
       </div>
     </section>
