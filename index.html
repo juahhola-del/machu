@@ -4,6 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>MachuLine</title>
+  <link rel="icon" type="image/png" href="/Logo.png" />
 
   <script type="module">
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -780,22 +781,14 @@
     .brand-lockup{
       display:flex;
       align-items:center;
-      gap:14px;
-      margin-bottom:18px;
+      margin-bottom:22px;
     }
 
     .brand-lockup img{
-      width:72px;
-      height:72px;
+      width:150px;
+      height:auto;
       object-fit:contain;
-      border-radius:16px;
-    }
-
-    .brand-name{
-      font-size: 18px;
-      color: #dbe7ff;
-      font-weight: 700;
-      letter-spacing: .02em;
+      display:block;
     }
 
     .hero-badge{
@@ -861,6 +854,13 @@
       background:#1d4ed8;
       color:white;
       border:1px solid rgba(255,255,255,.12);
+    }
+
+    .small-wa-btn{
+      padding:10px 14px;
+      font-size:14px;
+      min-height:auto;
+      width:auto;
     }
 
     .hero-side{
@@ -1261,6 +1261,10 @@
       margin-bottom:8px;
     }
 
+    .community-card{
+      text-align:center;
+    }
+
     .community-card h2{
       margin-top:0;
       margin-bottom:10px;
@@ -1268,7 +1272,7 @@
 
     .community-card p{
       color:var(--muted);
-      line-height:1.7;
+      line-height:1.6;
       margin-bottom:14px;
     }
 
@@ -1316,7 +1320,7 @@
     @media (max-width:720px){
       h1{font-size:38px}
       .hero p{font-size:16px}
-      .brand-lockup img{width:58px;height:58px}
+      .brand-lockup img{width:120px}
     }
   </style>
 </head>
@@ -1328,7 +1332,6 @@
         <div>
           <div class="brand-lockup">
             <img src="/Logo.png" alt="MachuLine" />
-            <div class="brand-name">MachuLine</div>
           </div>
 
           <div class="hero-badge">Predicción de prefila + rutas + señales en vivo</div>
@@ -1562,11 +1565,9 @@
     <section class="section">
       <div class="card community-card">
         <h2>Únete a la comunidad</h2>
-        <p>
-          Creamos un grupo de WhatsApp para compartir señales, dudas, observaciones sobre la fila y novedades útiles para quienes estén viajando o planificando su visita.
-        </p>
-        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">
-          Entrar al grupo de WhatsApp
+        <p>Grupo de WhatsApp para resolver dudas entre todos.</p>
+        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn small-wa-btn">
+          WhatsApp
         </a>
       </div>
     </section>
@@ -1589,7 +1590,7 @@
         </div>
 
         <div class="card report-card">
-          <img src="/3%282%29.png" alt="Referencia visual de fila 3" />
+          <img src="/3.png" alt="Referencia visual de fila 3" />
           <h3>Referencia adicional</h3>
           <p class="small-muted">Útil para hacer más cercana la herramienta mientras crece la base de datos real.</p>
         </div>
@@ -1598,3 +1599,4 @@
   </div>
 </body>
 </html>
+
