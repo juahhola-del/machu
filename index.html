@@ -23,7 +23,6 @@
     function routeColorByRisk(disponibles, riesgo) {
       const r = String(riesgo || "").toLowerCase();
       const d = Number(disponibles || 0);
-
       if (r.includes("crít") || r.includes("alto") || d < 10) return "red";
       if (r.includes("medio") || r.includes("riesgo") || d < 30) return "orange";
       return "green";
@@ -143,7 +142,6 @@
 
     async function cargarClima() {
       const el = document.getElementById("clima");
-
       try {
         const lat = -13.1631;
         const lon = -72.5450;
@@ -179,19 +177,19 @@
           </div>
 
           <div class="grid clima-grid">
-            <div class="mini-stat compact">
+            <div class="mini-stat inline-stat mobile-inline-stat">
               <span>Estado</span>
               <strong>${fmt(estado)}</strong>
             </div>
-            <div class="mini-stat compact">
+            <div class="mini-stat inline-stat mobile-inline-stat">
               <span>Temperatura</span>
               <strong>${fmt(temp)}°C</strong>
             </div>
-            <div class="mini-stat compact">
+            <div class="mini-stat inline-stat mobile-inline-stat">
               <span>Humedad</span>
               <strong>${humedadLabel(humidity)}</strong>
             </div>
-            <div class="mini-stat compact">
+            <div class="mini-stat inline-stat mobile-inline-stat">
               <span>Visibilidad</span>
               <strong>${visibilidad}</strong>
             </div>
@@ -294,17 +292,17 @@
             </div>
 
             <div class="grid stats-grid">
-              <div class="mini-stat inline-stat"><span>Disponibles reales</span><strong>${fmt(s.turnos_disponibles)}</strong></div>
-              <div class="mini-stat inline-stat"><span>Turnos entregados</span><strong>${fmt(s.turnos_entregados)}</strong></div>
-              <div class="mini-stat inline-stat"><span>Fila estimada</span><strong>${fmt(s.fila_estimada)}</strong></div>
-              <div class="mini-stat inline-stat wide-value"><span>Última actualización</span><strong>${formatPeruDateTime(s.captured_at)}</strong></div>
+              <div class="mini-stat inline-stat mobile-inline-stat"><span>Disponibles reales</span><strong>${fmt(s.turnos_disponibles)}</strong></div>
+              <div class="mini-stat inline-stat mobile-inline-stat"><span>Turnos entregados</span><strong>${fmt(s.turnos_entregados)}</strong></div>
+              <div class="mini-stat inline-stat mobile-inline-stat"><span>Fila estimada</span><strong>${fmt(s.fila_estimada)}</strong></div>
+              <div class="mini-stat inline-stat mobile-inline-stat wide-value"><span>Última actualización</span><strong>${formatPeruDateTime(s.captured_at)}</strong></div>
             </div>
 
             <div class="grid info-grid">
-              <div class="info-box inline-stat"><span>Huayna</span><strong>${fmt(s.etiqueta_huayna)}</strong></div>
-              <div class="info-box inline-stat"><span>Clásico</span><strong>${fmt(s.etiqueta_clasico)}</strong></div>
-              <div class="info-box inline-stat"><span>Presión general</span><strong>${fmt(s.etiqueta_presion_total)}</strong></div>
-              <div class="info-box inline-stat"><span>Fila</span><strong>${fmt(s.etiqueta_fila)}</strong></div>
+              <div class="info-box inline-stat mobile-inline-stat"><span>Huayna</span><strong>${fmt(s.etiqueta_huayna)}</strong></div>
+              <div class="info-box inline-stat mobile-inline-stat"><span>Clásico</span><strong>${fmt(s.etiqueta_clasico)}</strong></div>
+              <div class="info-box inline-stat mobile-inline-stat"><span>Presión general</span><strong>${fmt(s.etiqueta_presion_total)}</strong></div>
+              <div class="info-box inline-stat mobile-inline-stat"><span>Fila</span><strong>${fmt(s.etiqueta_fila)}</strong></div>
             </div>
 
             <div class="grid two-col" style="margin-top:14px;">
@@ -327,7 +325,6 @@
 
     async function cargarAlertas() {
       const el = document.getElementById("alertas");
-
       try {
         const { data, error } = await supabase.from("v_ticket_alerts_active").select("*").limit(20);
         if (error) throw error;
@@ -382,13 +379,9 @@
           const title = String(a.title || "").toLowerCase();
           const message = String(a.message || "").toLowerCase();
 
-          if (sev.includes("crit") || sev.includes("alta") || sev.includes("high")) {
-            criticals.push(a);
-          } else if (title.includes("oportunidad") || message.includes("oportunidad")) {
-            opportunities.push(a);
-          } else {
-            mediums.push(a);
-          }
+          if (sev.includes("crit") || sev.includes("alta") || sev.includes("high")) criticals.push(a);
+          else if (title.includes("oportunidad") || message.includes("oportunidad")) opportunities.push(a);
+          else mediums.push(a);
         });
 
         let finalAlerts = [];
@@ -459,14 +452,14 @@
               </div>
 
               <div class="ruta-grid">
-                <div class="inline-data"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
-                <div class="inline-data"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
-                <div class="inline-data"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
-                <div class="inline-data"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
-                <div class="inline-data"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
-                <div class="inline-data"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
-                <div class="inline-data"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-                <div class="inline-data"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
+                <div class="inline-data mobile-inline-data"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
               </div>
 
               <p class="lectura">${fmt(r.lectura_rapida)}</p>
@@ -518,7 +511,6 @@
 
         if (visibilidad.includes("baja")) lecturaClima = "La visibilidad podría jugar en contra de la experiencia visual.";
         else if (visibilidad.includes("alta") || visibilidad.includes("buena")) lecturaClima = "El sistema sugiere mejor escenario visual para el día de visita.";
-
         if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") {
           lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
         }
@@ -632,7 +624,7 @@
       --yellow:#facc15;
       --red:#ef4444;
       --line:rgba(255,255,255,.08);
-      --hero-overlay: rgba(7,19,41,.78);
+      --hero-overlay: rgba(7,19,41,.72);
     }
 
     *{box-sizing:border-box}
@@ -642,10 +634,31 @@
       margin:0;
       font-family:Inter,Arial,sans-serif;
       color:var(--text);
+      background-color: var(--bg);
+      position: relative;
+      overflow-x:hidden;
+    }
+
+    body::before{
+      content:"";
+      position:fixed;
+      inset:0;
       background:
         linear-gradient(var(--hero-overlay), var(--hero-overlay)),
-        url('/hero.png') center top / cover no-repeat fixed;
-      background-color: var(--bg);
+        url('/hero.png') center top / cover no-repeat;
+      z-index:-2;
+      transform:translateZ(0);
+    }
+
+    body::after{
+      content:"";
+      position:fixed;
+      inset:0;
+      background:
+        radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 24%),
+        radial-gradient(circle at top left, rgba(250,204,21,.08), transparent 24%);
+      z-index:-1;
+      pointer-events:none;
     }
 
     .container{
@@ -966,21 +979,6 @@
       grid-template-columns:repeat(2,minmax(0,1fr));
     }
 
-    .compact{
-      text-align:left;
-    }
-
-    .compact span{
-      display:block;
-      color:var(--muted);
-      font-size:13px;
-      margin-bottom:6px;
-    }
-
-    .compact strong{
-      font-size:18px;
-    }
-
     .clima-note{
       color:var(--muted);
       margin-top:14px;
@@ -1229,9 +1227,6 @@
     }
 
     @media (max-width:1100px){
-      body{
-        background-attachment: scroll;
-      }
       .hero{
         min-height:auto;
       }
@@ -1257,44 +1252,80 @@
     }
 
     @media (max-width:720px){
-      body{
+      body::before{
         background:
-          linear-gradient(var(--hero-overlay), var(--hero-overlay)),
+          linear-gradient(rgba(7,19,41,.56), rgba(7,19,41,.56)),
           url('/hero.png') center top / cover no-repeat;
-        background-attachment: scroll;
       }
+
       .container{
         padding:16px 12px 42px;
       }
+
+      .hero{
+        min-height:auto;
+        background: linear-gradient(180deg, rgba(9,18,36,.22), rgba(9,18,36,.44));
+      }
+
       .brand-lockup img{width:150px}
       .hero-copy p{font-size:16px}
+
       .stats-grid,
       .info-grid,
       .clima-grid,
+      .lead-grid,
       .report-grid,
       .report-meta,
-      .lead-grid,
       .ruta-grid{
         grid-template-columns:1fr !important;
       }
-      .inline-stat{
-        flex-direction:row;
-        align-items:center;
+
+      .mobile-inline-stat{
+        flex-direction:row !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        gap:14px !important;
+        min-height:64px;
       }
-      .inline-stat strong{
-        text-align:right;
+
+      .mobile-inline-stat span{
+        margin-bottom:0 !important;
+        max-width:48%;
       }
+
+      .mobile-inline-stat strong{
+        text-align:right !important;
+        max-width:48%;
+        font-size:17px;
+      }
+
       .wide-value strong{
-        max-width:54%;
-        font-size:15px;
+        max-width:52%;
+        font-size:14px;
       }
-      .inline-data{
-        min-height:auto;
+
+      .mobile-inline-data{
+        flex-direction:row !important;
+        align-items:center !important;
+        justify-content:space-between !important;
+        min-height:auto !important;
+        gap:14px !important;
       }
+
+      .mobile-inline-data span{
+        max-width:48%;
+      }
+
+      .mobile-inline-data strong{
+        text-align:right !important;
+        max-width:48%;
+      }
+
       .ruta-top{
         flex-direction:column;
         align-items:flex-start;
       }
+
       .badge{
         white-space:normal;
       }
@@ -1560,4 +1591,3 @@
   </div>
 </body>
 </html>
-
