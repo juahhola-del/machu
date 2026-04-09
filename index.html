@@ -177,19 +177,19 @@
           </div>
 
           <div class="grid clima-grid">
-            <div class="mini-stat inline-stat mobile-inline-stat">
+            <div class="mini-stat compact compact-row">
               <span>Estado</span>
               <strong>${fmt(estado)}</strong>
             </div>
-            <div class="mini-stat inline-stat mobile-inline-stat">
+            <div class="mini-stat compact compact-row">
               <span>Temperatura</span>
               <strong>${fmt(temp)}°C</strong>
             </div>
-            <div class="mini-stat inline-stat mobile-inline-stat">
+            <div class="mini-stat compact compact-row">
               <span>Humedad</span>
               <strong>${humedadLabel(humidity)}</strong>
             </div>
-            <div class="mini-stat inline-stat mobile-inline-stat">
+            <div class="mini-stat compact compact-row">
               <span>Visibilidad</span>
               <strong>${visibilidad}</strong>
             </div>
@@ -292,17 +292,17 @@
             </div>
 
             <div class="grid stats-grid">
-              <div class="mini-stat inline-stat mobile-inline-stat"><span>Disponibles reales</span><strong>${fmt(s.turnos_disponibles)}</strong></div>
-              <div class="mini-stat inline-stat mobile-inline-stat"><span>Turnos entregados</span><strong>${fmt(s.turnos_entregados)}</strong></div>
-              <div class="mini-stat inline-stat mobile-inline-stat"><span>Fila estimada</span><strong>${fmt(s.fila_estimada)}</strong></div>
-              <div class="mini-stat inline-stat mobile-inline-stat wide-value"><span>Última actualización</span><strong>${formatPeruDateTime(s.captured_at)}</strong></div>
+              <div class="mini-stat compact-row"><span>Disponibles reales</span><strong>${fmt(s.turnos_disponibles)}</strong></div>
+              <div class="mini-stat compact-row"><span>Turnos entregados</span><strong>${fmt(s.turnos_entregados)}</strong></div>
+              <div class="mini-stat compact-row"><span>Fila estimada</span><strong>${fmt(s.fila_estimada)}</strong></div>
+              <div class="mini-stat compact-row compact-row-wide"><span>Última actualización</span><strong>${formatPeruDateTime(s.captured_at)}</strong></div>
             </div>
 
             <div class="grid info-grid">
-              <div class="info-box inline-stat mobile-inline-stat"><span>Huayna</span><strong>${fmt(s.etiqueta_huayna)}</strong></div>
-              <div class="info-box inline-stat mobile-inline-stat"><span>Clásico</span><strong>${fmt(s.etiqueta_clasico)}</strong></div>
-              <div class="info-box inline-stat mobile-inline-stat"><span>Presión general</span><strong>${fmt(s.etiqueta_presion_total)}</strong></div>
-              <div class="info-box inline-stat mobile-inline-stat"><span>Fila</span><strong>${fmt(s.etiqueta_fila)}</strong></div>
+              <div class="info-box compact-row"><span>Huayna</span><strong>${fmt(s.etiqueta_huayna)}</strong></div>
+              <div class="info-box compact-row"><span>Clásico</span><strong>${fmt(s.etiqueta_clasico)}</strong></div>
+              <div class="info-box compact-row"><span>Presión general</span><strong>${fmt(s.etiqueta_presion_total)}</strong></div>
+              <div class="info-box compact-row"><span>Fila</span><strong>${fmt(s.etiqueta_fila)}</strong></div>
             </div>
 
             <div class="grid two-col" style="margin-top:14px;">
@@ -452,14 +452,14 @@
               </div>
 
               <div class="ruta-grid">
-                <div class="inline-data mobile-inline-data"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-                <div class="inline-data mobile-inline-data"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
+                <div class="inline-data compact-row"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
+                <div class="inline-data compact-row"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
+                <div class="inline-data compact-row"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
+                <div class="inline-data compact-row"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
+                <div class="inline-data compact-row"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
+                <div class="inline-data compact-row"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
+                <div class="inline-data compact-row"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
+                <div class="inline-data compact-row"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
               </div>
 
               <p class="lectura">${fmt(r.lectura_rapida)}</p>
@@ -815,33 +815,36 @@
       padding:14px;
     }
 
-    .inline-stat{
+    .compact-row{
       display:flex;
+      flex-direction:row;
       align-items:center;
       justify-content:space-between;
-      gap:16px;
-      min-height:72px;
+      gap:12px;
+      min-height:58px;
     }
 
-    .inline-stat span{
-      display:block;
+    .compact-row span{
       color:var(--muted);
       font-size:13px;
-      margin-bottom:0;
+      line-height:1.25;
+      margin:0;
       flex:1 1 auto;
       min-width:0;
     }
 
-    .inline-stat strong{
+    .compact-row strong{
       font-size:18px;
+      line-height:1.2;
       text-align:right;
       flex:0 0 auto;
+      max-width:52%;
       word-break:break-word;
     }
 
-    .wide-value strong{
-      max-width:58%;
-      font-size:16px;
+    .compact-row-wide strong{
+      font-size:15px;
+      max-width:56%;
     }
 
     .alert-grid{
@@ -899,23 +902,7 @@
       border:1px solid var(--line);
       border-radius:12px;
       padding:12px;
-      display:flex;
-      flex-direction:column;
-      justify-content:space-between;
-      gap:8px;
-      min-height:82px;
-    }
-
-    .inline-data span{
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.2;
-    }
-
-    .inline-data strong{
-      font-size:16px;
-      line-height:1.2;
-      word-break:break-word;
+      min-height:62px;
     }
 
     .lectura{
@@ -1209,11 +1196,11 @@
       border-radius:12px;
       background:rgba(255,255,255,.03);
       border:1px solid var(--line);
-      min-height:82px;
+      min-height:70px;
     }
 
     .report-meta-item.comment{
-      min-height:82px;
+      min-height:70px;
     }
 
     .report-meta-item span{
@@ -1280,45 +1267,37 @@
         grid-template-columns:1fr !important;
       }
 
-      .mobile-inline-stat{
-        flex-direction:row !important;
-        align-items:center !important;
-        justify-content:space-between !important;
-        gap:14px !important;
-        min-height:64px;
+      .card{
+        padding:14px;
       }
 
-      .mobile-inline-stat span{
-        margin-bottom:0 !important;
+      .mini-stat,
+      .info-box,
+      .subcard,
+      .inline-data,
+      .report-meta-item{
+        padding:12px 14px;
+      }
+
+      .compact-row{
+        min-height:52px !important;
+        gap:10px !important;
+      }
+
+      .compact-row span{
         max-width:48%;
+        font-size:13px;
       }
 
-      .mobile-inline-stat strong{
-        text-align:right !important;
+      .compact-row strong{
         max-width:48%;
-        font-size:17px;
+        font-size:16px;
+        text-align:right;
       }
 
-      .wide-value strong{
+      .compact-row-wide strong{
+        font-size:13px;
         max-width:52%;
-        font-size:14px;
-      }
-
-      .mobile-inline-data{
-        flex-direction:row !important;
-        align-items:center !important;
-        justify-content:space-between !important;
-        min-height:auto !important;
-        gap:14px !important;
-      }
-
-      .mobile-inline-data span{
-        max-width:48%;
-      }
-
-      .mobile-inline-data strong{
-        text-align:right !important;
-        max-width:48%;
       }
 
       .ruta-top{
