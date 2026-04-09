@@ -13,7 +13,6 @@
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
 
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
-
     let currentLiveStatus = null;
 
     function fmt(v, fallback = "—") {
@@ -177,19 +176,19 @@
           </div>
 
           <div class="grid clima-grid">
-            <div class="mini-stat compact compact-row">
+            <div class="mini-stat compact-row">
               <span>Estado</span>
               <strong>${fmt(estado)}</strong>
             </div>
-            <div class="mini-stat compact compact-row">
+            <div class="mini-stat compact-row">
               <span>Temperatura</span>
               <strong>${fmt(temp)}°C</strong>
             </div>
-            <div class="mini-stat compact compact-row">
+            <div class="mini-stat compact-row">
               <span>Humedad</span>
               <strong>${humedadLabel(humidity)}</strong>
             </div>
-            <div class="mini-stat compact compact-row">
+            <div class="mini-stat compact-row">
               <span>Visibilidad</span>
               <strong>${visibilidad}</strong>
             </div>
@@ -361,7 +360,6 @@
 
         const unique = [];
         const seen = new Set();
-
         for (const a of filtered) {
           const key = `${a.alert_type || ""}-${a.route_code || ""}-${a.title || ""}`;
           if (!seen.has(key)) {
@@ -373,7 +371,6 @@
         const criticals = [];
         const mediums = [];
         const opportunities = [];
-
         unique.forEach(a => {
           const sev = String(a.severity || "").toLowerCase();
           const title = String(a.title || "").toLowerCase();
@@ -582,7 +579,6 @@
         }
 
         const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
-
         el.innerHTML = `
           <div class="card resultado ${color}">
             <div class="eyebrow">Situación real</div>
@@ -821,7 +817,7 @@
       align-items:center;
       justify-content:space-between;
       gap:12px;
-      min-height:58px;
+      min-height:56px;
     }
 
     .compact-row span{
@@ -901,8 +897,8 @@
       background:rgba(255,255,255,.03);
       border:1px solid var(--line);
       border-radius:12px;
-      padding:12px;
-      min-height:62px;
+      padding:12px 14px;
+      min-height:56px;
     }
 
     .lectura{
@@ -1276,28 +1272,28 @@
       .subcard,
       .inline-data,
       .report-meta-item{
-        padding:12px 14px;
+        padding:10px 12px !important;
+        border-radius:10px;
       }
 
       .compact-row{
-        min-height:52px !important;
-        gap:10px !important;
+        min-height:40px !important;
+        gap:8px !important;
       }
 
       .compact-row span{
-        max-width:48%;
-        font-size:13px;
+        max-width:46%;
+        font-size:12px;
       }
 
       .compact-row strong{
-        max-width:48%;
-        font-size:16px;
+        max-width:52%;
+        font-size:15px;
         text-align:right;
       }
 
       .compact-row-wide strong{
-        font-size:13px;
-        max-width:52%;
+        font-size:12px;
       }
 
       .ruta-top{
