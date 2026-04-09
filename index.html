@@ -149,7 +149,6 @@
       const el = document.getElementById("clima");
 
       try {
-        // Machu Picchu aproximado
         const lat = -13.1631;
         const lon = -72.5450;
 
@@ -224,14 +223,26 @@
       }
     }
 
+    function irAMuestra() {
+      const section = document.getElementById("bloque-alertas");
+      const checkbox = document.getElementById("quiero-muestra");
+
+      if (checkbox) checkbox.checked = true;
+      if (section) {
+        section.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
+    }
+
     async function capturarLead() {
       const emailEl = document.getElementById("email");
       const fechaEl = document.getElementById("lead-fecha");
       const rutaEl = document.getElementById("lead-ruta");
+      const muestraEl = document.getElementById("quiero-muestra");
 
       const email = emailEl.value.trim();
       const fecha_viaje = fechaEl.value || null;
       const ruta_interes = rutaEl.value || null;
+      const quiere_muestra = muestraEl ? muestraEl.checked : false;
 
       if (!email) {
         alert("Ingresa tu correo");
@@ -243,30 +254,19 @@
         .insert([{
           email,
           fecha_viaje,
-          ruta_interes
+          ruta_interes,
+          quiere_muestra
         }]);
 
       if (error) {
         console.error("Error capturando lead:", error);
-        alert("No se pudo guardar tu correo. Intenta nuevamente.");
+        alert("No se pudo guardar tu información. Intenta nuevamente.");
       } else {
         alert("Listo. Te avisaremos 🙌");
         emailEl.value = "";
         fechaEl.value = "";
         rutaEl.value = "ruta_3a";
-      }
-    }
-
-    async function interesProducto() {
-      const { error } = await supabase
-        .from("interes_producto")
-        .insert([{ created_at: new Date().toISOString() }]);
-
-      if (error) {
-        console.error("Error registrando interés:", error);
-        alert("No se pudo registrar tu interés.");
-      } else {
-        alert("Perfecto. Te avisaremos cuando tengamos más información 🙌");
+        if (muestraEl) muestraEl.checked = false;
       }
     }
 
@@ -400,7 +400,6 @@
 
         let filtered = [...data];
 
-        // Alinear con el snapshot actual si existe
         if (currentLiveStatus?.captured_at) {
           const sameCapture = filtered.filter(a => a.captured_at === currentLiveStatus.captured_at);
           if (sameCapture.length > 0) filtered = sameCapture;
@@ -409,7 +408,6 @@
           if (sameDate.length > 0) filtered = sameDate;
         }
 
-        // Evitar alertas contradictorias con el estado actual del día
         const huaynaStable = String(currentLiveStatus?.etiqueta_huayna || "").toLowerCase().includes("estable");
         const clasicoStable = String(currentLiveStatus?.etiqueta_clasico || "").toLowerCase().includes("estable");
         const presionBaja = String(currentLiveStatus?.etiqueta_presion_total || "").toLowerCase().includes("baja");
@@ -478,7 +476,6 @@
           finalAlerts = opportunities.slice(0, 2);
         }
 
-        // Si todo fue filtrado, mostrar un resumen coherente con el estado
         if (finalAlerts.length === 0) {
           let fallbackText = "Hoy el sistema no detecta alertas críticas relevantes.";
           if (String(currentLiveStatus?.etiqueta_presion_total || "").toLowerCase().includes("baja")) {
@@ -698,58 +695,16 @@
       }
     }
 
-    async function cargarFotos() {
-      const el = document.getElementById("fotos");
-
-      try {
-        const { data, error } = await supabase
-          .from("v_queue_photo_feed")
-          .select("*")
-          .limit(6);
-
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div class="card"><p>Aún no hay reportes recientes.</p></div>`;
-          return;
-        }
-
-        let html = "";
-        data.forEach(f => {
-          html += `
-            <div class="card report-card">
-              ${f.image_url ? `<img src="${f.image_url}" alt="Reporte reciente" />` : ""}
-              <div class="report-body">
-                <p><b>Hora:</b> ${fmt(f.report_time)}</p>
-                <p><b>Personas delante:</b> ${fmt(f.people_ahead_estimate)}</p>
-                <p><b>Ruta buscada:</b> ${fmt(f.desired_route_name)}</p>
-                <p><b>Comentario:</b> ${fmt(f.comment)}</p>
-                <p><b>Confianza:</b> ${fmt(f.confidence_score)}</p>
-                <p><b>Logró ticket:</b> ${fmt(f.got_ticket)}</p>
-                <p><b>Logró ruta:</b> ${fmt(f.got_desired_route)}</p>
-              </div>
-            </div>
-          `;
-        });
-
-        el.innerHTML = html;
-      } catch (err) {
-        console.error("Error cargando reportes:", err);
-        el.innerHTML = `<div class="card"><p>No se pudieron cargar los reportes recientes.</p></div>`;
-      }
-    }
-
     window.simular = simular;
     window.calcular = calcular;
     window.capturarLead = capturarLead;
-    window.interesProducto = interesProducto;
+    window.irAMuestra = irAMuestra;
 
     window.addEventListener("DOMContentLoaded", async () => {
       await cargarClima();
       await cargarEstado();
       await cargarAlertas();
       await cargarRutas();
-      await cargarFotos();
     });
   </script>
 
@@ -769,6 +724,10 @@
 
     *{box-sizing:border-box}
 
+    html {
+      scroll-behavior: smooth;
+    }
+
     body{
       margin:0;
       font-family:Inter,Arial,sans-serif;
@@ -786,38 +745,89 @@
     }
 
     .hero{
-      padding:32px 0 12px;
+      position: relative;
+      min-height: 78vh;
+      border-radius: 28px;
+      overflow: hidden;
+      background-image: url('/hero.png');
+      background-size: cover;
+      background-position: center;
+      margin-top: 10px;
+      margin-bottom: 32px;
+      display: flex;
+      align-items: center;
+      box-shadow: 0 22px 60px rgba(0,0,0,.28);
+    }
+
+    .hero::before{
+      content:"";
+      position:absolute;
+      inset:0;
+      background: linear-gradient(180deg, rgba(0,0,0,.42), rgba(11,17,32,.88));
+    }
+
+    .hero-inner{
+      position: relative;
+      z-index: 2;
+      width: 100%;
+      padding: 44px 30px;
+      display:grid;
+      grid-template-columns: 1.3fr 0.9fr;
+      gap: 22px;
+      align-items: end;
+    }
+
+    .brand-lockup{
+      display:flex;
+      align-items:center;
+      gap:14px;
+      margin-bottom:18px;
+    }
+
+    .brand-lockup img{
+      width:72px;
+      height:72px;
+      object-fit:contain;
+      border-radius:16px;
+    }
+
+    .brand-name{
+      font-size: 18px;
+      color: #dbe7ff;
+      font-weight: 700;
+      letter-spacing: .02em;
     }
 
     .hero-badge{
       display:inline-block;
       padding:8px 12px;
-      border:1px solid var(--line);
+      border:1px solid rgba(255,255,255,.16);
       border-radius:999px;
-      background:rgba(255,255,255,.03);
-      color:var(--muted);
+      background:rgba(255,255,255,.06);
+      color:#dbe7ff;
       font-size:13px;
       margin-bottom:16px;
     }
 
     h1{
-      font-size:42px;
-      line-height:1.05;
-      margin:0 0 12px;
+      font-size:52px;
+      line-height:1.02;
+      margin:0 0 14px;
     }
 
     .hero p{
-      color:var(--muted);
-      font-size:18px;
+      color:#dbe7ff;
+      font-size:19px;
       line-height:1.6;
-      max-width:900px;
+      max-width:760px;
+      margin:0;
     }
 
     .hero-cta{
       display:flex;
       gap:12px;
       flex-wrap:wrap;
-      margin-top:18px;
+      margin-top:22px;
     }
 
     .anchor-btn, button{
@@ -826,11 +836,14 @@
       padding:12px 16px;
       font-weight:700;
       cursor:pointer;
+      font-family:inherit;
     }
 
     .anchor-btn{
       text-decoration:none;
-      display:inline-block;
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
     }
 
     .anchor-btn.primary, button{
@@ -841,7 +854,19 @@
     .anchor-btn.secondary{
       background:transparent;
       color:var(--text);
-      border:1px solid var(--line);
+      border:1px solid rgba(255,255,255,.18);
+    }
+
+    .anchor-btn.whatsapp-btn{
+      background:#1d4ed8;
+      color:white;
+      border:1px solid rgba(255,255,255,.12);
+    }
+
+    .hero-side{
+      display:flex;
+      flex-direction:column;
+      gap:14px;
     }
 
     .section{
@@ -869,13 +894,6 @@
 
     .two-col{
       grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    }
-
-    .hero-top-grid{
-      display:grid;
-      grid-template-columns:1.6fr 1fr;
-      gap:16px;
-      align-items:start;
     }
 
     .card{
@@ -961,15 +979,6 @@
       font-size:22px;
     }
 
-    .how-card h3, .guide-card h3{
-      margin-top:0;
-    }
-
-    .how-card p, .guide-card p{
-      color:var(--muted);
-      margin-bottom:0;
-    }
-
     .alert-grid{
       grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
     }
@@ -1050,30 +1059,6 @@
     .resultado.orange{border-left:4px solid var(--yellow)}
     .resultado.green{border-left:4px solid var(--green)}
 
-    .report-grid{
-      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
-    }
-
-    .report-card img{
-      width:100%;
-      display:block;
-      border-radius:12px;
-      margin-bottom:12px;
-      max-height:220px;
-      object-fit:cover;
-    }
-
-    .report-body p{
-      margin:.45rem 0;
-    }
-
-    .footer-note{
-      margin-top:36px;
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.6;
-    }
-
     .clima-head{
       display:flex;
       justify-content:space-between;
@@ -1100,28 +1085,6 @@
       margin-top:14px;
       margin-bottom:0;
       font-size:14px;
-      line-height:1.5;
-    }
-
-    .lead-card{
-      text-align:center;
-    }
-
-    .lead-wrap{
-      max-width:640px;
-      margin:14px auto 0;
-    }
-
-    .lead-grid{
-      display:grid;
-      grid-template-columns:2fr 1fr 1fr;
-      gap:10px;
-    }
-
-    .small-muted{
-      margin-top:10px;
-      color:var(--muted);
-      font-size:13px;
       line-height:1.5;
     }
 
@@ -1232,14 +1195,105 @@
       margin: 0;
     }
 
+    .lead-card{
+      text-align:center;
+    }
+
+    .lead-wrap{
+      max-width:760px;
+      margin:14px auto 0;
+    }
+
+    .lead-grid{
+      display:grid;
+      grid-template-columns:2fr 1fr 1fr;
+      gap:10px;
+    }
+
+    .lead-check{
+      margin-top:12px;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:10px;
+      color:#dbe7ff;
+      font-size:14px;
+    }
+
+    .lead-check input{
+      width:auto;
+      margin:0;
+    }
+
+    .small-muted{
+      margin-top:10px;
+      color:var(--muted);
+      font-size:13px;
+      line-height:1.5;
+    }
+
+    .news-card h2{
+      margin-top:0;
+      margin-bottom:10px;
+    }
+
+    .news-card p{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:16px;
+    }
+
+    .report-grid{
+      grid-template-columns:repeat(auto-fit,minmax(260px,1fr));
+    }
+
+    .report-card img{
+      width:100%;
+      display:block;
+      border-radius:12px;
+      margin-bottom:12px;
+      max-height:220px;
+      object-fit:cover;
+    }
+
+    .report-card h3{
+      margin-top:0;
+      margin-bottom:8px;
+    }
+
+    .community-card h2{
+      margin-top:0;
+      margin-bottom:10px;
+    }
+
+    .community-card p{
+      color:var(--muted);
+      line-height:1.7;
+      margin-bottom:14px;
+    }
+
+    .guide-card h3{
+      margin-top:0;
+    }
+
+    .guide-card p{
+      color:var(--muted);
+      margin-bottom:0;
+    }
+
     .seo-card p{
       color:var(--muted);
       line-height:1.7;
     }
 
     @media (max-width:980px){
-      .hero-top-grid{
+      .hero{
+        min-height:auto;
+      }
+
+      .hero-inner{
         grid-template-columns:1fr;
+        padding:30px 20px;
       }
 
       .lead-grid{
@@ -1260,8 +1314,9 @@
     }
 
     @media (max-width:720px){
-      h1{font-size:34px}
+      h1{font-size:38px}
       .hero p{font-size:16px}
+      .brand-lockup img{width:58px;height:58px}
     }
   </style>
 </head>
@@ -1269,18 +1324,23 @@
 <body>
   <div class="container">
     <section class="hero">
-      <div class="hero-top-grid">
+      <div class="hero-inner">
         <div>
+          <div class="brand-lockup">
+            <img src="/Logo.png" alt="MachuLine" />
+            <div class="brand-name">MachuLine</div>
+          </div>
+
           <div class="hero-badge">Predicción de prefila + rutas + señales en vivo</div>
           <h1>MachuLine</h1>
           <p>
-            La herramienta para entender la prefila, la fila de compra y la presión real por ruta en Machu Picchu.
-            Úsala para decidir mejor cuándo llegar, qué ruta priorizar y qué tan exigente viene el día.
+            Entiende la prefila, la fila de compra y la presión real por ruta en Machu Picchu para decidir mejor cuándo llegar y cómo moverte.
           </p>
 
           <div class="hero-cta">
             <a href="#estado-section" class="anchor-btn primary">Ver estado de hoy</a>
             <a href="#simulador-section" class="anchor-btn secondary">Simular mi fecha</a>
+            <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">Unirme a la comunidad</a>
           </div>
         </div>
 
@@ -1291,20 +1351,13 @@
     </section>
 
     <section class="section">
-      <h2>Cómo funciona MachuLine</h2>
-      <div class="grid three-col">
-        <div class="card how-card">
-          <h3>1. Prefila</h3>
-          <p>Antes de la venta presencial, muchas personas llegan temprano para obtener una mejor posición o número.</p>
-        </div>
-        <div class="card how-card">
-          <h3>2. Fila de compra</h3>
-          <p>Aunque consigas número, todavía importa cuánto queda por ruta cuando llega tu turno de compra.</p>
-        </div>
-        <div class="card how-card">
-          <h3>3. Tu decisión</h3>
-          <p>Te mostramos presión del día, rutas críticas y una hora estimada de llegada para actuar con más criterio.</p>
-        </div>
+      <div class="card news-card">
+        <div class="eyebrow">Explicación rápida</div>
+        <h2>¿Qué resuelve realmente MachuLine?</h2>
+        <p>
+          La mayoría de la gente llega a la compra presencial sin entender bien la prefila, la presión real del día ni qué ruta se tensiona primero. MachuLine busca reducir esa incertidumbre con señales en vivo, lectura del sistema y mejores referencias para planificar.
+        </p>
+        <a href="#guia-section" class="anchor-btn secondary">Leer guía completa</a>
       </div>
     </section>
 
@@ -1340,11 +1393,11 @@
           </div>
 
           <p class="altitude-product-copy">
-            Es un gel a base de alimentos naturales que facilitan la recuperación por el mal de altura. Por ahora estamos validando interés real antes de avanzar con pruebas, producción o puntos de entrega.
+            Es un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura. Ingredientes conceptuales: mate de coca, jengibre, ginseng, limón y miel.
           </p>
 
           <div class="altitude-product-actions">
-            <a href="javascript:void(0)" onclick="interesProducto()" class="altitude-product-btn">
+            <a href="javascript:void(0)" onclick="irAMuestra()" class="altitude-product-btn">
               Quiero una muestra gratis
             </a>
           </div>
@@ -1401,7 +1454,7 @@
       <div id="simulacion" style="margin-top:14px;"></div>
     </section>
 
-    <section class="section">
+    <section class="section" id="bloque-alertas">
       <div class="card lead-card">
         <h2>Recibe alertas para tu viaje</h2>
         <p>Si ya estás evaluando una fecha y una ruta, déjanos tu correo y te avisaremos cuando el sistema tenga mejores señales para tu caso.</p>
@@ -1420,13 +1473,18 @@
             </select>
           </div>
 
+          <label class="lead-check">
+            <input type="checkbox" id="quiero-muestra" />
+            Sí, quiero que me contacten si hay muestra gratis del gel para la altura.
+          </label>
+
           <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
             Quiero recibir alertas
           </button>
         </div>
 
         <p class="small-muted">
-          También podremos avisarte de nuevas herramientas, contenido útil y avances relacionados con productos pensados para viajeros.
+          También podremos avisarte de nuevas herramientas, contenido útil, comunidad y avances relacionados con productos pensados para viajeros.
         </p>
       </div>
     </section>
@@ -1469,7 +1527,7 @@
       <div id="resultado" style="margin-top:14px;"></div>
     </section>
 
-    <section class="section">
+    <section class="section" id="guia-section">
       <h2>Guía y noticias</h2>
       <p class="lead">Contenido útil para entender mejor la compra presencial y prepararte con más ventaja.</p>
 
@@ -1502,16 +1560,41 @@
     </section>
 
     <section class="section">
-      <h2>Reportes recientes</h2>
-      <p class="lead">Señales de comunidad para ver cómo se está moviendo la fila en terreno.</p>
-      <div id="fotos" class="grid report-grid">
-        <div class="card"><p>Cargando reportes...</p></div>
+      <div class="card community-card">
+        <h2>Únete a la comunidad</h2>
+        <p>
+          Creamos un grupo de WhatsApp para compartir señales, dudas, observaciones sobre la fila y novedades útiles para quienes estén viajando o planificando su visita.
+        </p>
+        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">
+          Entrar al grupo de WhatsApp
+        </a>
       </div>
     </section>
 
-    <div class="footer-note">
-      Tarea técnica pendiente importante: verificar de forma periódica que Supabase siga acumulando correctamente el histórico del scraper y que los snapshots sigan siendo la base real de la predicción.
-    </div>
+    <section class="section">
+      <h2>Reportes y referencias visuales</h2>
+      <p class="lead">Mientras seguimos capturando más evidencia real, aquí dejamos referencias visuales de fila y prefila.</p>
+
+      <div class="grid report-grid">
+        <div class="card report-card">
+          <img src="/1.png" alt="Referencia visual de fila 1" />
+          <h3>Referencia de fila</h3>
+          <p class="small-muted">Imagen de apoyo para entender mejor la dinámica de espera y presión presencial.</p>
+        </div>
+
+        <div class="card report-card">
+          <img src="/2.png" alt="Referencia visual de fila 2" />
+          <h3>Referencia de prefila</h3>
+          <p class="small-muted">Apoyo visual para comunidad, contexto y futura comparación con reportes propios.</p>
+        </div>
+
+        <div class="card report-card">
+          <img src="/3%282%29.png" alt="Referencia visual de fila 3" />
+          <h3>Referencia adicional</h3>
+          <p class="small-muted">Útil para hacer más cercana la herramienta mientras crece la base de datos real.</p>
+        </div>
+      </div>
+    </section>
   </div>
 </body>
 </html>
