@@ -176,22 +176,10 @@
           </div>
 
           <div class="grid clima-grid">
-            <div class="mini-stat compact-row">
-              <span>Estado</span>
-              <strong>${fmt(estado)}</strong>
-            </div>
-            <div class="mini-stat compact-row">
-              <span>Temperatura</span>
-              <strong>${fmt(temp)}°C</strong>
-            </div>
-            <div class="mini-stat compact-row">
-              <span>Humedad</span>
-              <strong>${humedadLabel(humidity)}</strong>
-            </div>
-            <div class="mini-stat compact-row">
-              <span>Visibilidad</span>
-              <strong>${visibilidad}</strong>
-            </div>
+            <div class="mini-stat compact-row"><span>Estado</span><strong>${fmt(estado)}</strong></div>
+            <div class="mini-stat compact-row"><span>Temperatura</span><strong>${fmt(temp)}°C</strong></div>
+            <div class="mini-stat compact-row"><span>Humedad</span><strong>${humedadLabel(humidity)}</strong></div>
+            <div class="mini-stat compact-row"><span>Visibilidad</span><strong>${visibilidad}</strong></div>
           </div>
 
           <p class="clima-note">Última referencia climática: ${formatPeruDateTime(time)}.</p>
@@ -234,12 +222,7 @@
         return;
       }
 
-      const { error } = await supabase.from("leads").insert([{
-        email,
-        fecha_viaje,
-        ruta_interes,
-        quiere_muestra
-      }]);
+      const { error } = await supabase.from("leads").insert([{ email, fecha_viaje, ruta_interes, quiere_muestra }]);
 
       if (error) {
         console.error("Error capturando lead:", error);
@@ -255,7 +238,6 @@
 
     async function cargarEstado() {
       const el = document.getElementById("estado");
-
       try {
         const { data, error } = await supabase.from("v_home_live_status").select("*").limit(1);
         if (error) throw error;
@@ -271,7 +253,6 @@
         const disponibles = Number(s.turnos_disponibles || 0);
         let estadoColor = "green";
         let estadoTexto = "🟢 Buen margen";
-
         if (disponibles < 20) {
           estadoColor = "red";
           estadoTexto = "🔴 Alta presión";
@@ -305,14 +286,8 @@
             </div>
 
             <div class="grid two-col" style="margin-top:14px;">
-              <div class="subcard">
-                <h4>Resumen del sistema hoy</h4>
-                <p>${fmt(s.lectura_preventa)}</p>
-              </div>
-              <div class="subcard">
-                <h4>Recomendación base del sistema</h4>
-                <p>${fmt(s.recomendacion_llegada_huayna)}</p>
-              </div>
+              <div class="subcard"><h4>Resumen del sistema hoy</h4><p>${fmt(s.lectura_preventa)}</p></div>
+              <div class="subcard"><h4>Recomendación base del sistema</h4><p>${fmt(s.recomendacion_llegada_huayna)}</p></div>
             </div>
           </div>
         `;
@@ -327,14 +302,12 @@
       try {
         const { data, error } = await supabase.from("v_ticket_alerts_active").select("*").limit(20);
         if (error) throw error;
-
         if (!data || data.length === 0) {
           el.innerHTML = `<div class="card"><p>No hay alertas activas por ahora.</p></div>`;
           return;
         }
 
         let filtered = [...data];
-
         if (currentLiveStatus?.captured_at) {
           const sameCapture = filtered.filter(a => a.captured_at === currentLiveStatus.captured_at);
           if (sameCapture.length > 0) filtered = sameCapture;
@@ -351,7 +324,6 @@
           const title = String(a.title || "").toLowerCase();
           const route = String(a.route_name || "").toLowerCase();
           const severity = String(a.severity || "").toLowerCase();
-
           if (huaynaStable && (title.includes("huayna") || route.includes("wayna") || route.includes("huayna")) && (severity.includes("crit") || severity.includes("alta"))) return false;
           if (clasicoStable && (title.includes("clásico") || title.includes("clasico") || route.includes("clásico") || route.includes("clasico")) && (severity.includes("crit") || severity.includes("alta"))) return false;
           if (presionBaja && severity.includes("alta")) return false;
@@ -375,7 +347,6 @@
           const sev = String(a.severity || "").toLowerCase();
           const title = String(a.title || "").toLowerCase();
           const message = String(a.message || "").toLowerCase();
-
           if (sev.includes("crit") || sev.includes("alta") || sev.includes("high")) criticals.push(a);
           else if (title.includes("oportunidad") || message.includes("oportunidad")) opportunities.push(a);
           else mediums.push(a);
@@ -411,7 +382,6 @@
             </div>
           `;
         });
-
         el.innerHTML = html;
       } catch (err) {
         console.error("Error cargando alertas:", err);
@@ -421,11 +391,9 @@
 
     async function cargarRutas() {
       const el = document.getElementById("rutas");
-
       try {
         const { data, error } = await supabase.from("v_home_routes_live").select("*");
         if (error) throw error;
-
         if (!data || data.length === 0) {
           el.innerHTML = `<div class="card"><p>Aún no hay rutas disponibles para mostrar.</p></div>`;
           return;
@@ -435,7 +403,6 @@
         data.forEach(r => {
           const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
           const estadoRaw = String(fmt(r.estado_ruta, r.riesgo_agotamiento)).toLowerCase();
-
           let estadoTexto = fmt(r.estado_ruta, r.riesgo_agotamiento);
           if (estadoRaw === "bajo") estadoTexto = "presión baja";
           if (estadoRaw === "medio") estadoTexto = "presión media";
@@ -448,22 +415,16 @@
                 <span class="badge ${color}">${estadoTexto}</span>
               </div>
 
-              <div class="ruta-grid">
-                <div class="inline-data compact-row"><span>Aforo</span><strong>${fmt(r.aforo)}</strong></div>
-                <div class="inline-data compact-row"><span>Vendidos</span><strong>${fmt(r.vendidos)}</strong></div>
-                <div class="inline-data compact-row"><span>Disponibles</span><strong>${fmt(r.disponibles)}</strong></div>
-                <div class="inline-data compact-row"><span>Ocupación</span><strong>${fmt(r.pct_ocupacion_pct)}%</strong></div>
-                <div class="inline-data compact-row"><span>Ritmo</span><strong>${fmt(r.ritmo_por_hora)}/h</strong></div>
-                <div class="inline-data compact-row"><span>Horas restantes</span><strong>${fmt(r.horas_restantes)}</strong></div>
-                <div class="inline-data compact-row"><span>Probabilidad actual</span><strong>${fmt(r.probabilidad_actual_pct)}%</strong></div>
-                <div class="inline-data compact-row"><span>Agotamiento aprox.</span><strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
+              <div class="ruta-lines">
+                <div>Aforo <strong>${fmt(r.aforo)}</strong> | Vendidos <strong>${fmt(r.vendidos)}</strong> | Disponibles <strong>${fmt(r.disponibles)}</strong></div>
+                <div>Ocupación <strong>${fmt(r.pct_ocupacion_pct)}%</strong> | Ritmo <strong>${fmt(r.ritmo_por_hora)}/h</strong> | Horas <strong>${fmt(r.horas_restantes)}</strong></div>
+                <div>Probabilidad <strong>${fmt(r.probabilidad_actual_pct)}%</strong> | Agotamiento <strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
               </div>
 
               <p class="lectura">${fmt(r.lectura_rapida)}</p>
             </div>
           `;
         });
-
         el.innerHTML = html;
       } catch (err) {
         console.error("Error cargando rutas:", err);
@@ -475,16 +436,13 @@
       const fecha = document.getElementById("fecha").value;
       const rutaDeseada = document.getElementById("ruta-simulador").value;
       const el = document.getElementById("simulacion");
-
       if (!fecha) {
         el.innerHTML = `<div class="card"><p>Primero elige una fecha de visita.</p></div>`;
         return;
       }
-
       try {
         const { data, error } = await supabase.from("v_visit_date_full_experience").select("*").eq("visit_date", fecha).limit(1);
         if (error) throw error;
-
         const s = data?.[0];
         if (!s) {
           el.innerHTML = `
@@ -505,18 +463,14 @@
         let lecturaClima = "Referencia inicial basada en el contexto disponible del sistema.";
         const lluvia = String(fmt(s.avg_rain, "")).toLowerCase();
         const visibilidad = String(fmt(s.visibilidad, "")).toLowerCase();
-
         if (visibilidad.includes("baja")) lecturaClima = "La visibilidad podría jugar en contra de la experiencia visual.";
         else if (visibilidad.includes("alta") || visibilidad.includes("buena")) lecturaClima = "El sistema sugiere mejor escenario visual para el día de visita.";
-        if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") {
-          lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
-        }
+        if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
 
         el.innerHTML = `
           <div class="card">
             <div class="eyebrow">Planificación</div>
             <h3>Tu estrategia para ${formatDateForInputHint(s.visit_date)}</h3>
-
             <div class="grid two-col">
               <div class="subcard">
                 <h4>Prefila y compra</h4>
@@ -527,7 +481,6 @@
                 <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
                 <p><b>Fila de venta:</b> ${fmt(s.recomendacion_fila_venta)}</p>
               </div>
-
               <div class="subcard">
                 <h4>Clima estimado para tu visita</h4>
                 <p><b>Temperatura promedio:</b> ${fmt(s.avg_temp)}</p>
@@ -552,12 +505,10 @@
       const ruta = document.getElementById("ruta").value;
       const notas = document.getElementById("comentario").value || null;
       const el = document.getElementById("resultado");
-
       if (!hora) {
         el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
         return;
       }
-
       try {
         const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
           p_report_date: new Date().toISOString().slice(0, 10),
@@ -569,15 +520,12 @@
           p_notes: notas,
           p_confidence_score: 80
         });
-
         if (error) throw error;
         const r = data?.[0];
-
         if (!r) {
           el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
           return;
         }
-
         const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
         el.innerHTML = `
           <div class="card resultado ${color}">
@@ -887,18 +835,24 @@
       white-space:nowrap;
     }
 
-    .ruta-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:10px;
+    .ruta-lines{
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+      font-size:14px;
+      line-height:1.5;
     }
 
-    .inline-data{
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px 14px;
-      min-height:56px;
+    .ruta-lines div{
+      color:#cbd5e1;
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+    }
+
+    .ruta-lines strong{
+      color:#22c55e;
+      font-weight:700;
     }
 
     .lectura{
@@ -1226,9 +1180,6 @@
       .altitude-product-lead {
         font-size: 18px;
       }
-      .ruta-grid{
-        grid-template-columns:repeat(2,minmax(0,1fr));
-      }
       .report-grid{
         grid-template-columns:1fr;
       }
@@ -1258,8 +1209,7 @@
       .clima-grid,
       .lead-grid,
       .report-grid,
-      .report-meta,
-      .ruta-grid{
+      .report-meta{
         grid-template-columns:1fr !important;
       }
 
@@ -1270,7 +1220,6 @@
       .mini-stat,
       .info-box,
       .subcard,
-      .inline-data,
       .report-meta-item{
         padding:10px 12px !important;
         border-radius:10px;
@@ -1303,6 +1252,16 @@
 
       .badge{
         white-space:normal;
+      }
+
+      .ruta-lines{
+        gap:6px;
+        font-size:13px;
+        line-height:1.45;
+      }
+
+      .ruta-lines div{
+        gap:4px;
       }
     }
   </style>
