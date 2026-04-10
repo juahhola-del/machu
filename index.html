@@ -11,8 +11,8 @@
 
     const SUPABASE_URL = "https://klmikzfstasntvgmxsuj.supabase.co";
     const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
-
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
     let currentLiveStatus = null;
 
     function fmt(v, fallback = "—") {
@@ -154,47 +154,32 @@
         const humidity = current.relative_humidity_2m;
         const weatherCode = current.weather_code;
         const rain = current.rain || 0;
-        const time = current.time;
 
         const estado = climaTextoDesdeCodigo(weatherCode);
         const visibilidad = visibilidadDesdeClima(weatherCode, rain);
 
-        let icon = "🌤️";
-        if (String(estado).toLowerCase().includes("nublado")) icon = "🌥️";
-        if (String(estado).toLowerCase().includes("lluv")) icon = "🌧️";
-        if (String(estado).toLowerCase().includes("tormenta")) icon = "⛈️";
-        if (String(estado).toLowerCase().includes("despejado")) icon = "☀️";
-        if (String(estado).toLowerCase().includes("neblina")) icon = "🌫️";
-
         el.innerHTML = `
-          <div class="clima-head">
-            <div>
-              <div class="eyebrow">Clima real en Machu Picchu</div>
-              <h3>Condición actual</h3>
-            </div>
-            <div class="clima-icon">${icon}</div>
+          <div class="hero-clima-title">
+            <span class="hero-clima-mountain">⛰️</span>
+            <span>Clima hoy</span>
           </div>
-
-          <div class="grid clima-grid">
-            <div class="mini-stat compact-row"><span>Estado</span><strong>${fmt(estado)}</strong></div>
-            <div class="mini-stat compact-row"><span>Temperatura</span><strong>${fmt(temp)}°C</strong></div>
-            <div class="mini-stat compact-row"><span>Humedad</span><strong>${humedadLabel(humidity)}</strong></div>
-            <div class="mini-stat compact-row"><span>Visibilidad</span><strong>${visibilidad}</strong></div>
+          <div class="hero-clima-lines">
+            <div>☁️ Estado <strong>${fmt(estado)}</strong></div>
+            <div>🌡️ Temp <strong>${fmt(temp)}°C</strong></div>
+            <div>💧 Humedad <strong>${humedadLabel(humidity)}</strong></div>
+            <div>👁️ Visibilidad <strong>${visibilidad}</strong></div>
           </div>
-
-          <p class="clima-note">Última referencia climática: ${formatPeruDateTime(time)}.</p>
         `;
       } catch (error) {
         console.error("Error clima:", error);
         el.innerHTML = `
-          <div class="clima-head">
-            <div>
-              <div class="eyebrow">Clima en Machu Picchu</div>
-              <h3>No disponible</h3>
-            </div>
-            <div class="clima-icon">🌥️</div>
+          <div class="hero-clima-title">
+            <span class="hero-clima-mountain">⛰️</span>
+            <span>Clima hoy</span>
           </div>
-          <p class="clima-note">No se pudo cargar el clima real por ahora.</p>
+          <div class="hero-clima-lines">
+            <div>☁️ Estado <strong>No disponible</strong></div>
+          </div>
         `;
       }
     }
@@ -222,7 +207,12 @@
         return;
       }
 
-      const { error } = await supabase.from("leads").insert([{ email, fecha_viaje, ruta_interes, quiere_muestra }]);
+      const { error } = await supabase.from("leads").insert([{
+        email,
+        fecha_viaje,
+        ruta_interes,
+        quiere_muestra
+      }]);
 
       if (error) {
         console.error("Error capturando lead:", error);
@@ -271,23 +261,21 @@
               <div class="estado-pill ${estadoColor}">${estadoTexto}</div>
             </div>
 
-            <div class="grid stats-grid">
-              <div class="mini-stat compact-row"><span>Disponibles reales</span><strong>${fmt(s.turnos_disponibles)}</strong></div>
-              <div class="mini-stat compact-row"><span>Turnos entregados</span><strong>${fmt(s.turnos_entregados)}</strong></div>
-              <div class="mini-stat compact-row"><span>Fila estimada</span><strong>${fmt(s.fila_estimada)}</strong></div>
-              <div class="mini-stat compact-row compact-row-wide"><span>Última actualización</span><strong>${formatPeruDateTime(s.captured_at)}</strong></div>
-            </div>
-
-            <div class="grid info-grid">
-              <div class="info-box compact-row"><span>Huayna</span><strong>${fmt(s.etiqueta_huayna)}</strong></div>
-              <div class="info-box compact-row"><span>Clásico</span><strong>${fmt(s.etiqueta_clasico)}</strong></div>
-              <div class="info-box compact-row"><span>Presión general</span><strong>${fmt(s.etiqueta_presion_total)}</strong></div>
-              <div class="info-box compact-row"><span>Fila</span><strong>${fmt(s.etiqueta_fila)}</strong></div>
+            <div class="status-lines">
+              <div>Disponibles <strong>${fmt(s.turnos_disponibles)}</strong> | Entregados <strong>${fmt(s.turnos_entregados)}</strong></div>
+              <div>Fila <strong>${fmt(s.fila_estimada)}</strong> | Huayna <strong>${fmt(s.etiqueta_huayna)}</strong></div>
+              <div>Clásico <strong>${fmt(s.etiqueta_clasico)}</strong> | Presión <strong>${fmt(s.etiqueta_presion_total)}</strong> | Fila <strong>${fmt(s.etiqueta_fila)}</strong></div>
             </div>
 
             <div class="grid two-col" style="margin-top:14px;">
-              <div class="subcard"><h4>Resumen del sistema hoy</h4><p>${fmt(s.lectura_preventa)}</p></div>
-              <div class="subcard"><h4>Recomendación base del sistema</h4><p>${fmt(s.recomendacion_llegada_huayna)}</p></div>
+              <div class="subcard">
+                <h4>Resumen del sistema hoy</h4>
+                <p>${fmt(s.lectura_preventa)}</p>
+              </div>
+              <div class="subcard">
+                <h4>Recomendación base del sistema</h4>
+                <p>${fmt(s.recomendacion_llegada_huayna)}</p>
+              </div>
             </div>
           </div>
         `;
@@ -302,6 +290,7 @@
       try {
         const { data, error } = await supabase.from("v_ticket_alerts_active").select("*").limit(20);
         if (error) throw error;
+
         if (!data || data.length === 0) {
           el.innerHTML = `<div class="card"><p>No hay alertas activas por ahora.</p></div>`;
           return;
@@ -382,6 +371,7 @@
             </div>
           `;
         });
+
         el.innerHTML = html;
       } catch (err) {
         console.error("Error cargando alertas:", err);
@@ -394,6 +384,7 @@
       try {
         const { data, error } = await supabase.from("v_home_routes_live").select("*");
         if (error) throw error;
+
         if (!data || data.length === 0) {
           el.innerHTML = `<div class="card"><p>Aún no hay rutas disponibles para mostrar.</p></div>`;
           return;
@@ -403,6 +394,7 @@
         data.forEach(r => {
           const color = routeColorByRisk(r.disponibles, r.riesgo_agotamiento);
           const estadoRaw = String(fmt(r.estado_ruta, r.riesgo_agotamiento)).toLowerCase();
+
           let estadoTexto = fmt(r.estado_ruta, r.riesgo_agotamiento);
           if (estadoRaw === "bajo") estadoTexto = "presión baja";
           if (estadoRaw === "medio") estadoTexto = "presión media";
@@ -425,6 +417,7 @@
             </div>
           `;
         });
+
         el.innerHTML = html;
       } catch (err) {
         console.error("Error cargando rutas:", err);
@@ -436,13 +429,16 @@
       const fecha = document.getElementById("fecha").value;
       const rutaDeseada = document.getElementById("ruta-simulador").value;
       const el = document.getElementById("simulacion");
+
       if (!fecha) {
         el.innerHTML = `<div class="card"><p>Primero elige una fecha de visita.</p></div>`;
         return;
       }
+
       try {
         const { data, error } = await supabase.from("v_visit_date_full_experience").select("*").eq("visit_date", fecha).limit(1);
         if (error) throw error;
+
         const s = data?.[0];
         if (!s) {
           el.innerHTML = `
@@ -465,12 +461,15 @@
         const visibilidad = String(fmt(s.visibilidad, "")).toLowerCase();
         if (visibilidad.includes("baja")) lecturaClima = "La visibilidad podría jugar en contra de la experiencia visual.";
         else if (visibilidad.includes("alta") || visibilidad.includes("buena")) lecturaClima = "El sistema sugiere mejor escenario visual para el día de visita.";
-        if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
+        if (lluvia && lluvia !== "—" && lluvia !== "0" && lluvia !== "0.0") {
+          lecturaClima += " Considera que la lluvia puede volver la experiencia más exigente.";
+        }
 
         el.innerHTML = `
           <div class="card">
             <div class="eyebrow">Planificación</div>
             <h3>Tu estrategia para ${formatDateForInputHint(s.visit_date)}</h3>
+
             <div class="grid two-col">
               <div class="subcard">
                 <h4>Prefila y compra</h4>
@@ -481,6 +480,7 @@
                 <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
                 <p><b>Fila de venta:</b> ${fmt(s.recomendacion_fila_venta)}</p>
               </div>
+
               <div class="subcard">
                 <h4>Clima estimado para tu visita</h4>
                 <p><b>Temperatura promedio:</b> ${fmt(s.avg_temp)}</p>
@@ -505,10 +505,12 @@
       const ruta = document.getElementById("ruta").value;
       const notas = document.getElementById("comentario").value || null;
       const el = document.getElementById("resultado");
+
       if (!hora) {
         el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
         return;
       }
+
       try {
         const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
           p_report_date: new Date().toISOString().slice(0, 10),
@@ -520,12 +522,15 @@
           p_notes: notas,
           p_confidence_score: 80
         });
+
         if (error) throw error;
         const r = data?.[0];
+
         if (!r) {
           el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
           return;
         }
+
         const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
         el.innerHTML = `
           <div class="card resultado ${color}">
@@ -556,717 +561,7 @@
       await cargarRutas();
     });
   </script>
-
-  <style>
-    :root{
-      --bg:#071329;
-      --card:#172033;
-      --card-2:#1e293b;
-      --text:#e5eefc;
-      --muted:#94a3b8;
-      --green:#22c55e;
-      --yellow:#facc15;
-      --red:#ef4444;
-      --line:rgba(255,255,255,.08);
-      --hero-overlay: rgba(7,19,41,.72);
-    }
-
-    *{box-sizing:border-box}
-    html { scroll-behavior: smooth; }
-
-    body{
-      margin:0;
-      font-family:Inter,Arial,sans-serif;
-      color:var(--text);
-      background-color: var(--bg);
-      position: relative;
-      overflow-x:hidden;
-    }
-
-    body::before{
-      content:"";
-      position:fixed;
-      inset:0;
-      background:
-        linear-gradient(var(--hero-overlay), var(--hero-overlay)),
-        url('/hero.png') center top / cover no-repeat;
-      z-index:-2;
-      transform:translateZ(0);
-    }
-
-    body::after{
-      content:"";
-      position:fixed;
-      inset:0;
-      background:
-        radial-gradient(circle at top right, rgba(34,197,94,.10), transparent 24%),
-        radial-gradient(circle at top left, rgba(250,204,21,.08), transparent 24%);
-      z-index:-1;
-      pointer-events:none;
-    }
-
-    .container{
-      max-width:1240px;
-      margin:0 auto;
-      padding:24px 18px 60px;
-    }
-
-    .hero{
-      position: relative;
-      min-height: 64vh;
-      border-radius: 28px;
-      overflow: hidden;
-      background: linear-gradient(180deg, rgba(9,18,36,.30), rgba(9,18,36,.58));
-      backdrop-filter: blur(2px);
-      margin-top: 10px;
-      margin-bottom: 32px;
-      display: flex;
-      align-items: center;
-      box-shadow: 0 22px 60px rgba(0,0,0,.28);
-      border:1px solid rgba(255,255,255,.06);
-    }
-
-    .hero-inner{
-      position: relative;
-      z-index: 2;
-      width: 100%;
-      padding: 44px 30px;
-      display:grid;
-      grid-template-columns: minmax(0,1.1fr) minmax(340px,.8fr);
-      gap: 22px;
-      align-items: end;
-    }
-
-    .brand-lockup{
-      display:flex;
-      align-items:center;
-      margin-bottom:12px;
-    }
-
-    .brand-lockup img{
-      width:190px;
-      height:auto;
-      object-fit:contain;
-      display:block;
-    }
-
-    .hero-copy{
-      max-width:680px;
-    }
-
-    .hero-copy p{
-      color:#dbe7ff;
-      font-size:19px;
-      line-height:1.6;
-      margin:0;
-    }
-
-    .section{
-      margin-top:28px;
-    }
-
-    .section h2{
-      font-size:24px;
-      margin:0 0 14px;
-    }
-
-    .section p.lead{
-      color:var(--muted);
-      margin-top:0;
-    }
-
-    .grid{
-      display:grid;
-      gap:14px;
-    }
-
-    .three-col{
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    }
-
-    .two-col{
-      grid-template-columns:repeat(auto-fit,minmax(280px,1fr));
-    }
-
-    .card{
-      background:linear-gradient(180deg, rgba(23,32,51,.96), rgba(30,41,59,.96));
-      border:1px solid var(--line);
-      border-radius:18px;
-      padding:18px;
-      box-shadow:0 10px 30px rgba(0,0,0,.18);
-      backdrop-filter: blur(2px);
-    }
-
-    .big{ text-align:center; }
-
-    .eyebrow{
-      color:var(--muted);
-      text-transform:uppercase;
-      font-size:12px;
-      letter-spacing:.08em;
-      margin-bottom:8px;
-    }
-
-    .status-head{
-      display:flex;
-      gap:16px;
-      justify-content:space-between;
-      align-items:flex-start;
-      margin-bottom:18px;
-      flex-wrap:wrap;
-    }
-
-    .estado-pill, .badge{
-      padding:10px 14px;
-      border-radius:999px;
-      font-weight:700;
-      font-size:14px;
-      display:inline-block;
-    }
-
-    .green{color:var(--green)}
-    .orange{color:var(--yellow)}
-    .red{color:var(--red)}
-
-    .estado-pill.green, .badge.green{
-      background:rgba(34,197,94,.14);
-      color:var(--green);
-    }
-
-    .estado-pill.orange, .badge.orange{
-      background:rgba(250,204,21,.12);
-      color:var(--yellow);
-    }
-
-    .estado-pill.red, .badge.red{
-      background:rgba(239,68,68,.12);
-      color:var(--red);
-    }
-
-    .stats-grid,
-    .info-grid{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:12px;
-    }
-
-    .stats-grid{ margin-bottom:14px; }
-
-    .mini-stat, .info-box, .subcard{
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--line);
-      border-radius:14px;
-      padding:14px;
-    }
-
-    .compact-row{
-      display:flex;
-      flex-direction:row;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      min-height:56px;
-    }
-
-    .compact-row span{
-      color:var(--muted);
-      font-size:13px;
-      line-height:1.25;
-      margin:0;
-      flex:1 1 auto;
-      min-width:0;
-    }
-
-    .compact-row strong{
-      font-size:18px;
-      line-height:1.2;
-      text-align:right;
-      flex:0 0 auto;
-      max-width:52%;
-      word-break:break-word;
-    }
-
-    .compact-row-wide strong{
-      font-size:15px;
-      max-width:56%;
-    }
-
-    .alert-grid{
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-    }
-
-    .alert-card{ border-left:4px solid transparent; }
-    .alert-card.red{border-left-color:var(--red)}
-    .alert-card.orange{border-left-color:var(--yellow)}
-    .alert-card.green{border-left-color:var(--green)}
-
-    .alert-title{
-      font-weight:800;
-      margin-bottom:8px;
-    }
-
-    .rutas-grid{
-      grid-template-columns:repeat(auto-fit,minmax(360px,1fr));
-    }
-
-    .ruta{ border-left:4px solid transparent; }
-    .ruta.green{border-left-color:var(--green)}
-    .ruta.orange{border-left-color:var(--yellow)}
-    .ruta.red{border-left-color:var(--red)}
-
-    .ruta-top{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:12px;
-      margin-bottom:14px;
-    }
-
-    .ruta-top h3{
-      margin:0;
-      font-size:20px;
-      line-height:1.25;
-      flex:1 1 auto;
-      min-width:0;
-    }
-
-    .badge{
-      flex:0 0 auto;
-      white-space:nowrap;
-    }
-
-    .ruta-lines{
-      display:flex;
-      flex-direction:column;
-      gap:8px;
-      font-size:14px;
-      line-height:1.5;
-    }
-
-    .ruta-lines div{
-      color:#cbd5e1;
-      display:flex;
-      flex-wrap:wrap;
-      gap:6px;
-    }
-
-    .ruta-lines strong{
-      color:#22c55e;
-      font-weight:700;
-    }
-
-    .lectura{
-      margin:14px 0 0;
-      color:var(--muted);
-    }
-
-    .form-grid{
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(220px,1fr));
-      gap:12px;
-      margin-bottom:12px;
-    }
-
-    input, select, textarea{
-      width:100%;
-      background:#0f172a;
-      color:var(--text);
-      border:1px solid var(--line);
-      border-radius:12px;
-      padding:12px 14px;
-      font-size:15px;
-    }
-
-    textarea{
-      min-height:110px;
-      resize:vertical;
-    }
-
-    button{
-      border:none;
-      border-radius:12px;
-      padding:12px 16px;
-      font-weight:700;
-      cursor:pointer;
-      font-family:inherit;
-      background:var(--green);
-      color:#04130a;
-    }
-
-    .resultado.red{border-left:4px solid var(--red)}
-    .resultado.orange{border-left:4px solid var(--yellow)}
-    .resultado.green{border-left:4px solid var(--green)}
-
-    .clima-head{
-      display:flex;
-      justify-content:space-between;
-      align-items:flex-start;
-      gap:14px;
-      margin-bottom:14px;
-    }
-
-    .clima-head h3{ margin:0; }
-
-    .clima-icon{
-      font-size:34px;
-      line-height:1;
-    }
-
-    .clima-grid{
-      grid-template-columns:repeat(2,minmax(0,1fr));
-    }
-
-    .clima-note{
-      color:var(--muted);
-      margin-top:14px;
-      margin-bottom:0;
-      font-size:14px;
-      line-height:1.5;
-    }
-
-    .altitude-product-block {
-      margin: 32px 0;
-    }
-
-    .altitude-product-card {
-      display: grid;
-      grid-template-columns: 1fr 1.1fr;
-      gap: 24px;
-      background: linear-gradient(180deg, rgba(22,35,60,.96) 0%, rgba(17,26,45,.96) 100%);
-      border: 1px solid rgba(255,255,255,0.08);
-      border-radius: 24px;
-      padding: 28px;
-      box-shadow: 0 20px 50px rgba(0,0,0,0.25);
-      overflow: hidden;
-    }
-
-    .altitude-product-image-wrap {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    .altitude-product-image {
-      width: 100%;
-      max-width: 380px;
-      height: auto;
-      display: block;
-      border-radius: 18px;
-      object-fit: cover;
-      background:#172033;
-    }
-
-    .altitude-product-content {
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-    }
-
-    .altitude-product-tag {
-      display: inline-block;
-      width: fit-content;
-      font-size: 13px;
-      font-weight: 700;
-      color: #22c55e;
-      background: rgba(34, 197, 94, 0.12);
-      border: 1px solid rgba(34, 197, 94, 0.22);
-      padding: 8px 12px;
-      border-radius: 999px;
-      margin-bottom: 16px;
-    }
-
-    .altitude-product-content h2 {
-      font-size: 40px;
-      line-height: 1.05;
-      margin: 0 0 14px;
-      color: #f8fafc;
-    }
-
-    .altitude-product-lead {
-      font-size: 21px;
-      line-height: 1.4;
-      color: #dbe7ff;
-      margin: 0 0 16px;
-    }
-
-    .altitude-product-copy {
-      font-size: 17px;
-      line-height: 1.6;
-      color: #cbd5e1;
-      margin: 0 0 20px;
-    }
-
-    .altitude-product-actions { margin-bottom: 0; }
-
-    .altitude-product-btn {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-height: 54px;
-      padding: 0 24px;
-      border-radius: 14px;
-      background: #22c55e;
-      color: #04130a;
-      font-weight: 800;
-      text-decoration: none;
-    }
-
-    .lead-card{ text-align:center; }
-
-    .lead-wrap{
-      max-width:760px;
-      margin:14px auto 0;
-    }
-
-    .lead-grid{
-      display:grid;
-      grid-template-columns:2fr 1fr 1fr;
-      gap:10px;
-    }
-
-    .lead-check{
-      margin-top:12px;
-      display:flex;
-      align-items:center;
-      justify-content:center;
-      gap:10px;
-      color:#dbe7ff;
-      font-size:14px;
-    }
-
-    .lead-check input{
-      width:auto;
-      margin:0;
-    }
-
-    .news-card h2,
-    .community-card h2,
-    .report-card h3{
-      margin-top:0;
-    }
-
-    .news-card p,
-    .community-card p,
-    .guide-card p{
-      color:var(--muted);
-      line-height:1.7;
-    }
-
-    .guide-card{
-      cursor:pointer;
-      transition:transform .18s ease, border-color .18s ease;
-      position:relative;
-      padding-right:52px;
-    }
-
-    .guide-card:hover{
-      transform:translateY(-3px);
-      border-color:rgba(255,255,255,.18);
-    }
-
-    .guide-arrow{
-      position:absolute;
-      right:18px;
-      top:20px;
-      color:#dbe7ff;
-      font-size:22px;
-      line-height:1;
-    }
-
-    .seo-home-card{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:16px;
-    }
-
-    .seo-home-card h2{
-      margin:0;
-      font-size:22px;
-    }
-
-    .seo-home-card .guide-arrow{
-      position:static;
-      font-size:24px;
-      flex-shrink:0;
-    }
-
-    .community-card{
-      text-align:center;
-    }
-
-    .community-card p{
-      margin-bottom:14px;
-    }
-
-    .anchor-btn{
-      text-decoration:none;
-      display:inline-flex;
-      align-items:center;
-      justify-content:center;
-      border-radius:12px;
-      padding:10px 14px;
-      font-weight:700;
-    }
-
-    .whatsapp-btn{
-      background:#1d4ed8;
-      color:#fff;
-      border:1px solid rgba(255,255,255,.12);
-    }
-
-    .report-grid{
-      display:grid;
-      grid-template-columns:repeat(3,minmax(0,1fr));
-      gap:16px;
-    }
-
-    .report-card img{
-      width:100%;
-      display:block;
-      border-radius:12px;
-      margin-bottom:12px;
-      max-height:220px;
-      object-fit:cover;
-    }
-
-    .report-meta{
-      display:grid;
-      grid-template-columns:repeat(2,minmax(0,1fr));
-      gap:8px;
-      margin-top:10px;
-    }
-
-    .report-meta-item{
-      display:flex;
-      flex-direction:column;
-      justify-content:flex-start;
-      gap:6px;
-      padding:10px 12px;
-      border-radius:12px;
-      background:rgba(255,255,255,.03);
-      border:1px solid var(--line);
-      min-height:70px;
-    }
-
-    .report-meta-item.comment{
-      min-height:70px;
-    }
-
-    .report-meta-item span{
-      color:var(--muted);
-      font-size:13px;
-    }
-
-    .report-meta-item strong{
-      font-size:14px;
-      line-height:1.35;
-    }
-
-    @media (max-width:1100px){
-      .hero{
-        min-height:auto;
-      }
-      .hero-inner{
-        grid-template-columns:1fr;
-        padding:30px 20px;
-      }
-      .altitude-product-card{
-        grid-template-columns: 1fr;
-      }
-      .altitude-product-content h2 {
-        font-size: 32px;
-      }
-      .altitude-product-lead {
-        font-size: 18px;
-      }
-      .report-grid{
-        grid-template-columns:1fr;
-      }
-    }
-
-    @media (max-width:720px){
-      body::before{
-        background:
-          linear-gradient(rgba(7,19,41,.56), rgba(7,19,41,.56)),
-          url('/hero.png') center top / cover no-repeat;
-      }
-
-      .container{
-        padding:16px 12px 42px;
-      }
-
-      .hero{
-        min-height:auto;
-        background: linear-gradient(180deg, rgba(9,18,36,.22), rgba(9,18,36,.44));
-      }
-
-      .brand-lockup img{width:150px}
-      .hero-copy p{font-size:16px}
-
-      .stats-grid,
-      .info-grid,
-      .clima-grid,
-      .lead-grid,
-      .report-grid,
-      .report-meta{
-        grid-template-columns:1fr !important;
-      }
-
-      .card{
-        padding:14px;
-      }
-
-      .mini-stat,
-      .info-box,
-      .subcard,
-      .report-meta-item{
-        padding:10px 12px !important;
-        border-radius:10px;
-      }
-
-      .compact-row{
-        min-height:40px !important;
-        gap:8px !important;
-      }
-
-      .compact-row span{
-        max-width:46%;
-        font-size:12px;
-      }
-
-      .compact-row strong{
-        max-width:52%;
-        font-size:15px;
-        text-align:right;
-      }
-
-      .compact-row-wide strong{
-        font-size:12px;
-      }
-
-      .ruta-top{
-        flex-direction:column;
-        align-items:flex-start;
-      }
-
-      .badge{
-        white-space:normal;
-      }
-
-      .ruta-lines{
-        gap:6px;
-        font-size:13px;
-        line-height:1.45;
-      }
-
-      .ruta-lines div{
-        gap:4px;
-      }
-    }
-  </style>
 </head>
-
 <body>
   <div class="container">
     <section class="hero">
@@ -1280,248 +575,33 @@
           </p>
         </div>
 
-        <div id="clima" class="card">
-          <p>Cargando clima...</p>
+        <div id="clima" class="hero-clima-box">
+          <div class="hero-clima-title"><span class="hero-clima-mountain">⛰️</span><span>Clima hoy</span></div>
+          <div class="hero-clima-lines"><div>☁️ Estado <strong>Cargando...</strong></div></div>
         </div>
       </div>
     </section>
 
-    <section class="section">
-      <div class="card news-card">
-        <div class="eyebrow">Explicación rápida</div>
-        <h2>¿Qué resuelve realmente MachuLine?</h2>
-        <p>
-          La mayoría de la gente llega a la compra presencial sin entender bien la prefila, la presión real del día ni qué ruta se tensiona primero. MachuLine busca reducir esa incertidumbre con señales en vivo, lectura del sistema y mejores referencias para planificar.
-        </p>
-      </div>
-    </section>
+    <section class="section"><div class="card news-card"><div class="eyebrow">Explicación rápida</div><h2>¿Qué resuelve realmente MachuLine?</h2><p>La mayoría de la gente llega a la compra presencial sin entender bien la prefila, la presión real del día ni qué ruta se tensiona primero. MachuLine busca reducir esa incertidumbre con señales en vivo, lectura del sistema y mejores referencias para planificar.</p></div></section>
+    <section class="section" id="estado-section"><div id="estado"><div class="card big"><h2>Estado de hoy</h2><p>Cargando estado...</p></div></div></section>
 
-    <section class="section" id="estado-section">
-      <div id="estado">
-        <div class="card big">
-          <h2>Estado de hoy</h2>
-          <p>Cargando estado...</p>
-        </div>
-      </div>
-    </section>
+    <section class="altitude-product-block"><div class="altitude-product-card"><div class="altitude-product-image-wrap"><img src="/producto.png" alt="Gel natural para adaptación a la altura" class="altitude-product-image" /></div><div class="altitude-product-content"><span class="altitude-product-tag">Validación temprana</span><h2>¿Vas a subir a Machu Picchu?</h2><p class="altitude-product-lead">Buscamos personas interesadas en probar una muestra gratis en Cusco antes de su visita.</p><p class="altitude-product-copy">Es un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura. Ingredientes: mate de coca, jengibre, ginseng, limón y miel.</p><div class="altitude-product-actions"><a href="javascript:void(0)" onclick="irAMuestra()" class="altitude-product-btn">Quiero una muestra gratis</a></div></div></div></section>
 
-    <section class="altitude-product-block">
-      <div class="altitude-product-card">
-        <div class="altitude-product-image-wrap">
-          <img src="/producto.png" alt="Gel natural para adaptación a la altura" class="altitude-product-image" />
-        </div>
+    <section class="section"><h2>Alertas activas</h2><p class="lead">Señales rápidas alineadas con el estado actual del sistema.</p><div id="alertas" class="grid alert-grid"><div class="card"><p>Cargando alertas...</p></div></div></section>
+    <section class="section"><h2>Rutas en vivo</h2><p class="lead">No todas las rutas se comportan igual. Aquí ves riesgo, ritmo y probabilidad actual.</p><div id="rutas" class="grid rutas-grid"><div class="card"><p>Cargando rutas...</p></div></div></section>
 
-        <div class="altitude-product-content">
-          <span class="altitude-product-tag">Validación temprana</span>
-          <h2>¿Vas a subir a Machu Picchu?</h2>
-          <p class="altitude-product-lead">
-            Buscamos personas interesadas en probar una muestra gratis en Cusco antes de su visita.
-          </p>
-          <p class="altitude-product-copy">
-            Es un gel a base de alimentos naturales pensado para facilitar la recuperación frente al mal de altura. Ingredientes: mate de coca, jengibre, ginseng, limón y miel.
-          </p>
-          <div class="altitude-product-actions">
-            <a href="javascript:void(0)" onclick="irAMuestra()" class="altitude-product-btn">
-              Quiero una muestra gratis
-            </a>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section class="section" id="simulador-section"><h2>Planifica tu visita</h2><p class="lead">Elige tu fecha de visita y la ruta que te interesa para estimar qué día comprar y a qué hora llegar.</p><div class="card"><div class="form-grid"><div><label for="fecha">Fecha de visita</label><input type="date" id="fecha" /></div><div><label for="ruta-simulador">Ruta objetivo</label><select id="ruta-simulador"><option value="ruta_3a">Montaña Waynapicchu</option><option value="ruta_2a">Clásico</option><option value="ruta_1a">Montaña Machu Picchu</option><option value="ruta_1b">Terraza Superior</option><option value="ruta_2b">Terraza Inferior</option><option value="ruta_3b">Otra ruta</option></select></div></div><button onclick="simular()">Simular estrategia</button></div><div id="simulacion" style="margin-top:14px;"></div></section>
 
-    <section class="section">
-      <h2>Alertas activas</h2>
-      <p class="lead">Señales rápidas alineadas con el estado actual del sistema.</p>
-      <div id="alertas" class="grid alert-grid">
-        <div class="card"><p>Cargando alertas...</p></div>
-      </div>
-    </section>
+    <section class="section" id="bloque-alertas"><div class="card lead-card"><h2>Recibe alertas para tu viaje</h2><p>Si ya estás evaluando una fecha y una ruta, déjanos tu correo y te avisaremos cuando el sistema tenga mejores señales para tu caso.</p><div class="lead-wrap"><div class="lead-grid"><input type="email" id="email" placeholder="Tu correo" /><input type="date" id="lead-fecha" /><select id="lead-ruta"><option value="ruta_3a">Montaña Waynapicchu</option><option value="ruta_2a">Clásico</option><option value="ruta_1a">Montaña Machu Picchu</option><option value="ruta_1b">Terraza Superior</option><option value="ruta_2b">Terraza Inferior</option><option value="ruta_3b">Otra ruta</option></select></div><label class="lead-check"><input type="checkbox" id="quiero-muestra" />Sí, quiero que me contacten si hay muestra gratis del gel para la altura.</label><button onclick="capturarLead()" style="margin-top:10px; width:100%;">Quiero recibir alertas</button></div></div></section>
 
-    <section class="section">
-      <h2>Rutas en vivo</h2>
-      <p class="lead">No todas las rutas se comportan igual. Aquí ves riesgo, ritmo y probabilidad actual.</p>
-      <div id="rutas" class="grid rutas-grid">
-        <div class="card"><p>Cargando rutas...</p></div>
-      </div>
-    </section>
+    <section class="section"><h2>Ya estoy en la fila</h2><p class="lead">Ingresa tu situación real para estimar tu probabilidad actual y una alternativa si vas muy justo.</p><div class="card"><div class="form-grid"><div><label for="hora">Hora de llegada</label><input type="time" id="hora" /></div><div><label for="personas">Personas delante</label><input type="number" id="personas" placeholder="Ej: 120" /></div><div><label for="ruta">Ruta objetivo</label><select id="ruta"><option value="ruta_3a">Montaña Waynapicchu</option><option value="ruta_2a">Clásico</option><option value="ruta_1a">Montaña Machu Picchu</option><option value="ruta_1b">Terraza Superior</option><option value="ruta_2b">Terraza Inferior</option><option value="ruta_3b">Otra ruta</option></select></div></div><div style="margin-bottom:12px;"><label for="comentario">Comentario opcional</label><textarea id="comentario" placeholder="Ej: la fila avanza lento, mucha presión en Huayna..."></textarea></div><button onclick="calcular()">Calcular mi situación</button></div><div id="resultado" style="margin-top:14px;"></div></section>
 
-    <section class="section" id="simulador-section">
-      <h2>Planifica tu visita</h2>
-      <p class="lead">Elige tu fecha de visita y la ruta que te interesa para estimar qué día comprar y a qué hora llegar.</p>
+    <section class="section" id="guia-section"><h2>Guía y noticias</h2><p class="lead">Contenido útil para entender mejor la compra presencial y prepararte con más ventaja.</p><div class="grid three-col"><div class="card guide-card"><span class="guide-arrow">→</span><h3>Cómo funciona la prefila</h3><p>Entiende por qué llegar temprano cambia tus posibilidades incluso antes de la compra presencial real.</p></div><div class="card guide-card"><span class="guide-arrow">→</span><h3>Qué hacer si quieres Huayna</h3><p>Huayna suele tensionarse antes que otras rutas. Aquí iremos publicando guías y señales para interpretarlo mejor.</p></div><div class="card guide-card"><span class="guide-arrow">→</span><h3>Cómo leer la presión del día</h3><p>Te explicaremos cómo interpretar alertas, ritmo, agotamiento aproximado y rutas con mayor oportunidad.</p></div></div></section>
 
-      <div class="card">
-        <div class="form-grid">
-          <div>
-            <label for="fecha">Fecha de visita</label>
-            <input type="date" id="fecha" />
-          </div>
-          <div>
-            <label for="ruta-simulador">Ruta objetivo</label>
-            <select id="ruta-simulador">
-              <option value="ruta_3a">Montaña Waynapicchu</option>
-              <option value="ruta_2a">Clásico</option>
-              <option value="ruta_1a">Montaña Machu Picchu</option>
-              <option value="ruta_1b">Terraza Superior</option>
-              <option value="ruta_2b">Terraza Inferior</option>
-              <option value="ruta_3b">Otra ruta</option>
-            </select>
-          </div>
-        </div>
+    <section class="section"><div class="card seo-home-card"><h2>Guía rápida para entradas presenciales a Machu Picchu</h2><span class="guide-arrow">→</span></div></section>
+    <section class="section"><div class="card community-card"><h2>Únete a la comunidad</h2><p>Para resolver dudas.</p><a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">WhatsApp</a></div></section>
 
-        <button onclick="simular()">Simular estrategia</button>
-      </div>
-
-      <div id="simulacion" style="margin-top:14px;"></div>
-    </section>
-
-    <section class="section" id="bloque-alertas">
-      <div class="card lead-card">
-        <h2>Recibe alertas para tu viaje</h2>
-        <p>Si ya estás evaluando una fecha y una ruta, déjanos tu correo y te avisaremos cuando el sistema tenga mejores señales para tu caso.</p>
-
-        <div class="lead-wrap">
-          <div class="lead-grid">
-            <input type="email" id="email" placeholder="Tu correo" />
-            <input type="date" id="lead-fecha" />
-            <select id="lead-ruta">
-              <option value="ruta_3a">Montaña Waynapicchu</option>
-              <option value="ruta_2a">Clásico</option>
-              <option value="ruta_1a">Montaña Machu Picchu</option>
-              <option value="ruta_1b">Terraza Superior</option>
-              <option value="ruta_2b">Terraza Inferior</option>
-              <option value="ruta_3b">Otra ruta</option>
-            </select>
-          </div>
-
-          <label class="lead-check">
-            <input type="checkbox" id="quiero-muestra" />
-            Sí, quiero que me contacten si hay muestra gratis del gel para la altura.
-          </label>
-
-          <button onclick="capturarLead()" style="margin-top:10px; width:100%;">
-            Quiero recibir alertas
-          </button>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>Ya estoy en la fila</h2>
-      <p class="lead">Ingresa tu situación real para estimar tu probabilidad actual y una alternativa si vas muy justo.</p>
-
-      <div class="card">
-        <div class="form-grid">
-          <div>
-            <label for="hora">Hora de llegada</label>
-            <input type="time" id="hora" />
-          </div>
-          <div>
-            <label for="personas">Personas delante</label>
-            <input type="number" id="personas" placeholder="Ej: 120" />
-          </div>
-          <div>
-            <label for="ruta">Ruta objetivo</label>
-            <select id="ruta">
-              <option value="ruta_3a">Montaña Waynapicchu</option>
-              <option value="ruta_2a">Clásico</option>
-              <option value="ruta_1a">Montaña Machu Picchu</option>
-              <option value="ruta_1b">Terraza Superior</option>
-              <option value="ruta_2b">Terraza Inferior</option>
-              <option value="ruta_3b">Otra ruta</option>
-            </select>
-          </div>
-        </div>
-
-        <div style="margin-bottom:12px;">
-          <label for="comentario">Comentario opcional</label>
-          <textarea id="comentario" placeholder="Ej: la fila avanza lento, mucha presión en Huayna..."></textarea>
-        </div>
-
-        <button onclick="calcular()">Calcular mi situación</button>
-      </div>
-
-      <div id="resultado" style="margin-top:14px;"></div>
-    </section>
-
-    <section class="section" id="guia-section">
-      <h2>Guía y noticias</h2>
-      <p class="lead">Contenido útil para entender mejor la compra presencial y prepararte con más ventaja.</p>
-
-      <div class="grid three-col">
-        <div class="card guide-card">
-          <span class="guide-arrow">→</span>
-          <h3>Cómo funciona la prefila</h3>
-          <p>Entiende por qué llegar temprano cambia tus posibilidades incluso antes de la compra presencial real.</p>
-        </div>
-        <div class="card guide-card">
-          <span class="guide-arrow">→</span>
-          <h3>Qué hacer si quieres Huayna</h3>
-          <p>Huayna suele tensionarse antes que otras rutas. Aquí iremos publicando guías y señales para interpretarlo mejor.</p>
-        </div>
-        <div class="card guide-card">
-          <span class="guide-arrow">→</span>
-          <h3>Cómo leer la presión del día</h3>
-          <p>Te explicaremos cómo interpretar alertas, ritmo, agotamiento aproximado y rutas con mayor oportunidad.</p>
-        </div>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="card seo-home-card">
-        <h2>Guía rápida para entradas presenciales a Machu Picchu</h2>
-        <span class="guide-arrow">→</span>
-      </div>
-    </section>
-
-    <section class="section">
-      <div class="card community-card">
-        <h2>Únete a la comunidad</h2>
-        <p>Para resolver dudas.</p>
-        <a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">
-          WhatsApp
-        </a>
-      </div>
-    </section>
-
-    <section class="section">
-      <h2>Reportes de la comunidad</h2>
-      <p class="lead">Mientras activamos la subida de imágenes, aquí mostramos ejemplos del tipo de información que podremos reunir desde “Ya estoy en la fila”.</p>
-
-      <div class="grid report-grid">
-        <div class="card report-card">
-          <img src="/1.png" alt="Reporte visual 1" />
-          <h3>Reporte 1</h3>
-          <div class="report-meta">
-            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
-            <div class="report-meta-item"><span>Hora</span><strong>06:40</strong></div>
-            <div class="report-meta-item"><span>Personas</span><strong>100</strong></div>
-            <div class="report-meta-item comment"><span>Ruta / Comentario</span><strong>Waynapicchu · Fila larga desde temprano y avance lento.</strong></div>
-          </div>
-        </div>
-
-        <div class="card report-card">
-          <img src="/2.png" alt="Reporte visual 2" />
-          <h3>Reporte 2</h3>
-          <div class="report-meta">
-            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
-            <div class="report-meta-item"><span>Hora</span><strong>07:15</strong></div>
-            <div class="report-meta-item"><span>Personas</span><strong>200</strong></div>
-            <div class="report-meta-item comment"><span>Ruta / Comentario</span><strong>Clásico · Alta presión y mucha gente esperando.</strong></div>
-          </div>
-        </div>
-
-        <div class="card report-card">
-          <img src="/3.png" alt="Reporte visual 3" />
-          <h3>Reporte 3</h3>
-          <div class="report-meta">
-            <div class="report-meta-item"><span>Día</span><strong>Hoy</strong></div>
-            <div class="report-meta-item"><span>Hora</span><strong>08:05</strong></div>
-            <div class="report-meta-item"><span>Personas</span><strong>300</strong></div>
-            <div class="report-meta-item comment"><span>Ruta / Comentario</span><strong>Montaña Machu Picchu · La fila se ve extensa y con poco movimiento.</strong></div>
-          </div>
-        </div>
-      </div>
-    </section>
+    <section class="section"><h2>Reportes de la comunidad</h2><p class="lead">Mientras activamos la subida de imágenes, aquí mostramos ejemplos del tipo de información que podremos reunir desde “Ya estoy en la fila”.</p><div class="grid report-grid"><div class="card report-card"><img src="/1.png" alt="Reporte visual 1" /><h3>Reporte 1</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>06:40</strong> | Personas <strong>100</strong></div><div>Ruta <strong>Waynapicchu</strong> | Comentario <strong>Fila larga desde temprano y avance lento.</strong></div></div></div><div class="card report-card"><img src="/2.png" alt="Reporte visual 2" /><h3>Reporte 2</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>07:15</strong> | Personas <strong>200</strong></div><div>Ruta <strong>Clásico</strong> | Comentario <strong>Alta presión y mucha gente esperando.</strong></div></div></div><div class="card report-card"><img src="/3.png" alt="Reporte visual 3" /><h3>Reporte 3</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>08:05</strong> | Personas <strong>300</strong></div><div>Ruta <strong>Montaña Machu Picchu</strong> | Comentario <strong>La fila se ve extensa y con poco movimiento.</strong></div></div></div></div></section>
   </div>
 </body>
 </html>
