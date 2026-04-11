@@ -417,11 +417,11 @@
     async function guardarReporteFallback({ hora, personas, ruta, notas, imageUrl }) {
       const payload = {
         report_date: new Date().toISOString().slice(0, 10),
-        arrival_time: hora,
+        report_time: hora,
         people_ahead_estimate: personas,
         desired_route_code: ruta,
         desired_route_name: routeNameFromCode(ruta),
-        notes: notas,
+        comment: notas,
         confidence_score: 80,
         image_url: imageUrl
       };
@@ -610,8 +610,8 @@
             ${r.image_url ? `<img src="${r.image_url}" alt="Reporte real" />` : ""}
             <h3>Reporte reciente</h3>
             <div class="report-lines">
-              <div>Día <strong>${fmt(formatSimpleDate(r.report_date || r.created_at))}</strong> | Hora <strong>${fmt(formatSimpleTime(r.arrival_time || r.created_at))}</strong> | Personas <strong>${fmt(r.people_ahead_estimate || r.personas_delante || r.people_ahead)}</strong></div>
-              <div>Ruta <strong>${fmt(r.desired_route_name || r.route_name || routeNameFromCode(r.desired_route_code))}</strong> | Comentario <strong>${fmt(r.notes || r.comment || "Sin comentario")}</strong></div>
+              <div>Día <strong>${fmt(formatSimpleDate(r.report_date || r.created_at))}</strong> | Hora <strong>${fmt(formatSimpleTime(r.report_time || r.arrival_time || r.created_at))}</strong> | Personas <strong>${fmt(r.people_ahead_estimate || r.personas_delante || r.people_ahead)}</strong></div>
+              <div>Ruta <strong>${fmt(r.desired_route_name || r.route_name || routeNameFromCode(r.desired_route_code))}</strong> | Comentario <strong>${fmt(r.comment || r.notes || "Sin comentario")}</strong></div>
             </div>
           </div>
         `).join("");
@@ -650,7 +650,7 @@
     .hero-inner{width:100%;padding:24px 30px 34px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
     .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
     .brand-lockup{display:flex;align-items:center;margin-bottom:0}
-    .brand-lockup img{width:126px;height:auto;object-fit:contain;display:block}
+    .brand-lockup img{width:168px;height:auto;object-fit:contain;display:block}
     .hero-copy{max-width:720px;align-self:end;padding-top:0}
     .hero-copy p{color:#dbe7ff;font-size:19px;line-height:1.6;margin:0}
     .hero-clima-box{align-self:start;justify-self:start;width:min(180px,100%);padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
@@ -721,7 +721,7 @@
     .report-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
     .report-card img{width:100%;display:block;border-radius:12px;margin-bottom:12px;max-height:220px;object-fit:cover}
     @media (max-width:1100px){.hero{min-height:auto}.hero-inner{padding:20px 20px 28px}.altitude-product-card{grid-template-columns:1fr}.altitude-product-content h2{font-size:32px}.altitude-product-lead{font-size:18px}.report-grid{grid-template-columns:1fr}}
-    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:12px;padding:16px 16px 20px}.brand-lockup img{width:96px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(155px,100%);padding:8px 10px}.hero-clima-title{font-size:13px;margin-bottom:4px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
+    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:12px;padding:16px 16px 20px}.brand-lockup img{width:122px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(155px,100%);padding:8px 10px}.hero-clima-title{font-size:13px;margin-bottom:4px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
   </style>
 </head>
 <body>
