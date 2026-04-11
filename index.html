@@ -127,10 +127,11 @@
 
     async function cargarClima() {
       const el = document.getElementById("clima");
+      if (!el) return;
       el.innerHTML = `
         <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
         <div class="hero-clima-lines compact two-cols">
-          <div><span>☁️ Estado actual</span><span>🌡️ --°C</span></div>
+          <div><span>☁️ No disponible</span><span>🌡️ --°C</span></div>
           <div><span>💧 --</span><span>👁️ --</span></div>
         </div>
       `;
@@ -626,12 +627,12 @@ window.addEventListener("DOMContentLoaded", async () => {
     .container{max-width:1240px;margin:0 auto;padding:24px 18px 60px}
     .hero{position:relative;min-height:58vh;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(9,18,36,.26),rgba(9,18,36,.50));margin-top:10px;margin-bottom:32px;display:flex;align-items:center;box-shadow:0 22px 60px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06)}
     .hero-inner{width:100%;padding:24px 30px 34px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
-    .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;flex-wrap:wrap}
     .brand-lockup{display:flex;align-items:center;margin-bottom:0}
     .brand-lockup img{width:240px;height:auto;object-fit:contain;display:block}
     .hero-copy{max-width:720px;align-self:end;padding-top:0}
     .hero-copy p{color:#dbe7ff;font-size:19px;line-height:1.6;margin:0}
-    .hero-clima-box{align-self:start;justify-self:start;width:min(250px,100%);padding:8px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
+    .hero-clima-box{align-self:start;justify-self:start;display:block;width:min(260px,100%);min-width:220px;padding:8px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.92),rgba(20,31,50,.92));border:1px solid rgba(255,255,255,.10);box-shadow:0 10px 26px rgba(0,0,0,.18)}
     .hero-clima-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:6px;color:#dbe7ff}
     .hero-clima-lines,.status-lines,.ruta-lines,.report-lines{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
     .hero-clima-lines.compact div{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#cbd5e1;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)}
