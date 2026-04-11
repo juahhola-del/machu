@@ -251,12 +251,6 @@
       }).join("");
     }
 
-      el.innerHTML = routeExperienceRows.map(r => {
-        const active = r.route_code === currentRouteCode ? "active" : "";
-        return `<button class="route-pill ${active}" onclick="selectRoute('${r.route_code}')">${fmt(r.route_name)}</button>`;
-      }).join("");
-    }
-
     function renderRutaElegida() {
       const el = document.getElementById("route-experience");
       const r = routeExperienceRows.find(x => x.route_code === currentRouteCode) || routeExperienceRows[0];
