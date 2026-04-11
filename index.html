@@ -236,15 +236,20 @@
     }
 
     function renderSelector() {
-      const el = document.getElementById("route-selector");
+      const el = document.getElementById("route-selector-dropdown");
+      if (!el) return;
       if (!routeExperienceRows.length) {
-        el.innerHTML = `<div class="card"><p>No hay rutas para mostrar.</p></div>`;
+        el.innerHTML = `<option value="">No hay rutas disponibles</option>`;
         return;
       }
 
+      if (!routeExperienceRows.find(r => r.route_code === currentRouteCode)) {
+        currentRouteCode = routeExperienceRows[0].route_code;
+      }
+
       el.innerHTML = routeExperienceRows.map(r => {
-        const active = r.route_code === currentRouteCode ? "active" : "";
-        return `<button class="route-pill ${active}" onclick="selectRoute('${r.route_code}')">${fmt(r.route_name)}</button>`;
+        const selected = r.route_code === currentRouteCode ? "selected" : "";
+        return `<option value="${r.route_code}" ${selected}>${fmt(r.route_name)}</option>`;
       }).join("");
     }
 
@@ -604,7 +609,7 @@
         }
 
         el.innerHTML = rows.map(r => `
-          <div class="card report-card">
+          <div class="report-item">
             ${r.image_url ? `<img src="${r.image_url}" alt="Reporte real" />` : ""}
             <h3>Reporte reciente</h3>
             <div class="report-lines">
@@ -660,7 +665,7 @@ window.addEventListener("DOMContentLoaded", async () => {
     .brand-lockup img{width:240px;height:auto;object-fit:contain;display:block}
     .hero-copy{max-width:720px;align-self:end;padding-top:0}
     .hero-copy p{color:#dbe7ff;font-size:19px;line-height:1.6;margin:0}
-    .hero-clima-box{align-self:start;justify-self:start;width:min(180px,100%);padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
+    .hero-clima-box{align-self:start;justify-self:start;width:min(235px,100%);padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
     .hero-clima-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:6px;color:#dbe7ff}
     .hero-clima-lines,.status-lines,.ruta-lines,.report-lines{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
     .hero-clima-lines.compact div{display:flex;align-items:center;justify-content:flex-start;gap:6px;color:#cbd5e1;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -725,10 +730,10 @@ window.addEventListener("DOMContentLoaded", async () => {
     .community-card p{margin-bottom:14px}
     .anchor-btn{text-decoration:none;display:inline-flex;align-items:center;justify-content:center;border-radius:12px;padding:10px 14px;font-weight:700}
     .whatsapp-btn{background:#1d4ed8;color:#fff;border:1px solid rgba(255,255,255,.12)}
-    .report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}
+    .report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
     .report-card img{width:100%;display:block;border-radius:12px;margin-bottom:12px;max-height:220px;object-fit:cover}
     @media (max-width:1100px){.hero{min-height:auto}.hero-inner{padding:20px 20px 28px}.altitude-product-card{grid-template-columns:1fr}.altitude-product-content h2{font-size:32px}.altitude-product-lead{font-size:18px}.report-grid{grid-template-columns:1fr}}
-    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:12px;padding:16px 16px 20px}.brand-lockup img{width:170px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(155px,100%);padding:8px 10px}.hero-clima-title{font-size:13px;margin-bottom:4px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
+    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:12px;padding:16px 16px 20px}.brand-lockup img{width:180px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(190px,100%);padding:8px 10px}.hero-clima-title{font-size:13px;margin-bottom:4px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
   
 .hero-clima-lines.two-cols div {
   display:flex;
@@ -747,6 +752,36 @@ window.addEventListener("DOMContentLoaded", async () => {
 .compact-route-select{max-width:360px}
 .compact-route-select select{width:100%}
 .live-dot{color:#ef4444}
+
+
+.hero-clima-box{max-width:235px}
+.report-feed{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.report-item{
+  padding:0 0 12px 0;
+  border-bottom:1px solid rgba(255,255,255,.10);
+  background:transparent;
+  border-radius:0;
+  box-shadow:none;
+}
+.report-item img{
+  width:100%;
+  display:block;
+  border-radius:10px;
+  margin-bottom:8px;
+  max-height:150px;
+  object-fit:cover;
+}
+.report-item h3{
+  margin:0 0 6px;
+  font-size:16px;
+}
+.report-item .report-lines{
+  gap:4px;
+  font-size:13px;
+}
+@media (max-width:720px){
+  .report-feed{grid-template-columns:1fr}
+}
 
 </style>
 </head>
@@ -861,27 +896,29 @@ window.addEventListener("DOMContentLoaded", async () => {
       <div id="resultado" style="margin-top:14px;"></div>
     </section>
 
-    <section class="section"><div class="card seo-home-card"><h2>Guía rápida para entradas presenciales a Machu Picchu</h2><span class="guide-arrow">→</span></div></section>
+    
     <section class="section"><div class="card community-card"><h2>Únete a la comunidad</h2><p>Para resolver dudas.</p><a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">WhatsApp</a></div></section>
 
     <section class="section">
       <h2>Reportes de la comunidad</h2>
-      <p class="lead">Las primeras tarjetas sirven como referencia y debajo se van sumando automáticamente los reportes reales más recientes.</p>
+      <p class="lead">Las primeras referencias se mantienen y debajo se van sumando automáticamente los reportes reales más recientes.</p>
 
-      <div class="grid report-grid">
-        <div class="card report-card"><img src="/1.png" alt="Reporte visual 1" /><h3>Reporte 1</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>06:40</strong> | Personas <strong>100</strong></div><div>Ruta <strong>Waynapicchu</strong> | Comentario <strong>Fila larga desde temprano y avance lento.</strong></div></div></div>
-        <div class="card report-card"><img src="/2.png" alt="Reporte visual 2" /><h3>Reporte 2</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>07:15</strong> | Personas <strong>200</strong></div><div>Ruta <strong>Clásico</strong> | Comentario <strong>Alta presión y mucha gente esperando.</strong></div></div></div>
-        <div class="card report-card"><img src="/3.png" alt="Reporte visual 3" /><h3>Reporte 3</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>08:05</strong> | Personas <strong>300</strong></div><div>Ruta <strong>Montaña Machu Picchu</strong> | Comentario <strong>La fila se ve extensa y con poco movimiento.</strong></div></div></div>
+      <div class="report-feed" style="margin-top:8px;">
+        <div class="report-item"><img src="/1.png" alt="Reporte visual 1" /><h3>Reporte 1</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>06:40</strong> | Personas <strong>100</strong></div><div>Ruta <strong>Waynapicchu</strong> | Comentario <strong>Fila larga desde temprano y avance lento.</strong></div></div></div>
+        <div class="report-item"><img src="/2.png" alt="Reporte visual 2" /><h3>Reporte 2</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>07:15</strong> | Personas <strong>200</strong></div><div>Ruta <strong>Clásico</strong> | Comentario <strong>Alta presión y mucha gente esperando.</strong></div></div></div>
+        <div class="report-item"><img src="/3.png" alt="Reporte visual 3" /><h3>Reporte 3</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>08:05</strong> | Personas <strong>300</strong></div><div>Ruta <strong>Montaña Machu Picchu</strong> | Comentario <strong>La fila se ve extensa y con poco movimiento.</strong></div></div></div>
       </div>
 
-      <div id="reportes-reales" class="report-grid" style="margin-top:16px;">
-        <div class="card"><p>Cargando reportes reales...</p></div>
+      <div id="reportes-reales" class="report-feed" style="margin-top:16px;">
+        <div class="report-item"><p>Cargando reportes reales...</p></div>
       </div>
 
       <div style="text-align:center; margin-top:12px;">
         <button onclick="mostrarMasReportes()">Ver más</button>
       </div>
     </section>
+
+    <section class="section"><div class="card seo-home-card"><h2>Guía rápida para entradas presenciales a Machu Picchu</h2><span class="guide-arrow">→</span></div></section>
 
     <section class="section">
       <h2>Guía y noticias</h2>
