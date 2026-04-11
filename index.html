@@ -10,7 +10,7 @@
     import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
     const SUPABASE_URL = "https://klmikzfstasntvgmxsuj.supabase.co";
-    const SUPABASE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImtsbWlremZzdGFzbnR2Z214c3VqIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUzOTUyMjYsImV4cCI6MjA5MDk3MTIyNn0.AJLc5hqP6BLS1hd99SqV7xKIWZPP_8cS1gF16PiHr7o";
+    const SUPABASE_KEY = "TU_ANON_KEY_AQUI";
     const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
 
     let currentRouteCode = "ruta_3a";
@@ -49,25 +49,11 @@
 
     function climaTextoDesdeCodigo(code) {
       const map = {
-        0: "Despejado",
-        1: "Mayormente despejado",
-        2: "Parcialmente nublado",
-        3: "Nublado",
-        45: "Neblina",
-        48: "Neblina con escarcha",
-        51: "Llovizna ligera",
-        53: "Llovizna moderada",
-        55: "Llovizna intensa",
-        61: "Lluvia ligera",
-        63: "Lluvia moderada",
-        65: "Lluvia intensa",
-        71: "Nieve ligera",
-        73: "Nieve moderada",
-        75: "Nieve intensa",
-        80: "Chubascos ligeros",
-        81: "Chubascos moderados",
-        82: "Chubascos intensos",
-        95: "Tormenta"
+        0: "Despejado", 1: "Mayormente despejado", 2: "Parcialmente nublado", 3: "Nublado",
+        45: "Neblina", 48: "Neblina con escarcha", 51: "Llovizna ligera", 53: "Llovizna moderada",
+        55: "Llovizna intensa", 61: "Lluvia ligera", 63: "Lluvia moderada", 65: "Lluvia intensa",
+        71: "Nieve ligera", 73: "Nieve moderada", 75: "Nieve intensa", 80: "Chubascos ligeros",
+        81: "Chubascos moderados", 82: "Chubascos intensos", 95: "Tormenta"
       };
       return map[code] || "Condición variable";
     }
@@ -125,17 +111,17 @@
 
     function formatSimpleTime(value) {
       if (!value) return "—";
-      if (typeof value === "string" && value.length >= 5 && value.includes(":")) return value.slice(0,5);
+      if (typeof value === "string" && /^\d{2}:\d{2}/.test(value)) return value.slice(0, 5);
       try {
         const d = new Date(value);
-        if (isNaN(d.getTime())) return value;
+        if (isNaN(d.getTime())) return "—";
         return new Intl.DateTimeFormat("es-PE", {
           timeZone: "America/Lima",
           hour: "2-digit",
           minute: "2-digit"
         }).format(d);
       } catch {
-        return value;
+        return "—";
       }
     }
 
@@ -428,6 +414,35 @@
       return data?.publicUrl || null;
     }
 
+    async function guardarReporteFallback({ hora, personas, ruta, notas, imageUrl }) {
+      const payload = {
+        report_date: new Date().toISOString().slice(0, 10),
+        arrival_time: hora,
+        people_ahead_estimate: personas,
+        desired_route_code: ruta,
+        desired_route_name: routeNameFromCode(ruta),
+        notes: notas,
+        confidence_score: 80,
+        image_url: imageUrl
+      };
+
+      let inserted = null;
+      try {
+        const { data, error } = await supabase
+          .from("ticket_queue_photo_reports")
+          .insert([payload])
+          .select()
+          .limit(1);
+
+        if (error) throw error;
+        inserted = data?.[0] || null;
+      } catch (err) {
+        console.warn("Fallback ticket_queue_photo_reports falló:", err);
+      }
+
+      return inserted;
+    }
+
     async function calcular() {
       const personas = parseInt(document.getElementById("personas").value || "0", 10);
       const hora = document.getElementById("hora").value;
@@ -463,8 +478,7 @@
         const r = data?.[0];
 
         if (!r) {
-          el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
-          return;
+          throw new Error("RPC sin resultado");
         }
 
         el.innerHTML = `
@@ -478,12 +492,28 @@
             ${imageUrl ? `<p><b>Foto subida:</b> lista</p>` : ""}
           </div>
         `;
-
-        await cargarReportesReales();
       } catch (err) {
         console.error("Error calculando probabilidad:", err);
-        el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
+
+        const inserted = await guardarReporteFallback({
+          hora,
+          personas,
+          ruta,
+          notas,
+          imageUrl
+        });
+
+        el.innerHTML = `
+          <div class="card">
+            <div class="eyebrow">Reporte guardado</div>
+            <h3>No se pudo calcular la probabilidad ahora</h3>
+            <p>Igual guardamos tu reporte para que aparezca en la página.</p>
+            ${inserted ? `<p><b>Estado:</b> reporte publicado</p>` : `<p><b>Estado:</b> no se pudo publicar el reporte automático</p>`}
+          </div>
+        `;
       }
+
+      await cargarReportesReales();
     }
 
     async function simular() {
@@ -617,15 +647,16 @@
     body::after{content:"";position:fixed;inset:0;background:radial-gradient(circle at top right,rgba(34,197,94,.10),transparent 24%),radial-gradient(circle at top left,rgba(250,204,21,.08),transparent 24%);z-index:-1;pointer-events:none}
     .container{max-width:1240px;margin:0 auto;padding:24px 18px 60px}
     .hero{position:relative;min-height:58vh;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(9,18,36,.26),rgba(9,18,36,.50));margin-top:10px;margin-bottom:32px;display:flex;align-items:center;box-shadow:0 22px 60px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06)}
-    .hero-inner{width:100%;padding:30px 30px 34px;display:grid;grid-template-columns:minmax(0,1fr) minmax(230px,.40fr);gap:18px;align-items:start}
-    .brand-lockup{display:flex;align-items:center;margin-bottom:10px}
+    .hero-inner{width:100%;padding:24px 30px 34px;display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+    .hero-top{display:flex;align-items:flex-start;justify-content:space-between;gap:14px}
+    .brand-lockup{display:flex;align-items:center;margin-bottom:0}
     .brand-lockup img{width:126px;height:auto;object-fit:contain;display:block}
-    .hero-copy{max-width:720px;align-self:end;padding-top:6px}
+    .hero-copy{max-width:720px;align-self:end;padding-top:0}
     .hero-copy p{color:#dbe7ff;font-size:19px;line-height:1.6;margin:0}
-    .hero-clima-box{align-self:start;justify-self:end;width:min(220px,100%);padding:10px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
-    .hero-clima-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:8px;color:#dbe7ff}
+    .hero-clima-box{align-self:start;justify-self:start;width:min(180px,100%);padding:8px 10px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
+    .hero-clima-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:6px;color:#dbe7ff}
     .hero-clima-lines,.status-lines,.ruta-lines,.report-lines{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
-    .hero-clima-lines.compact div{display:flex;align-items:center;justify-content:flex-start;gap:8px;color:#cbd5e1;padding:3px 0;border-bottom:1px solid rgba(255,255,255,.06)}
+    .hero-clima-lines.compact div{display:flex;align-items:center;justify-content:flex-start;gap:6px;color:#cbd5e1;padding:2px 0;border-bottom:1px solid rgba(255,255,255,.06)}
     .hero-clima-lines.compact div:last-child{border-bottom:none;padding-bottom:0}
     .hero-clima-lines .icon{width:16px;display:inline-flex;justify-content:center}
     .hero-clima-lines strong{color:#fff;font-weight:700}
@@ -689,21 +720,23 @@
     .whatsapp-btn{background:#1d4ed8;color:#fff;border:1px solid rgba(255,255,255,.12)}
     .report-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
     .report-card img{width:100%;display:block;border-radius:12px;margin-bottom:12px;max-height:220px;object-fit:cover}
-    @media (max-width:1100px){.hero{min-height:auto}.hero-inner{grid-template-columns:1fr;padding:24px 20px 28px}.hero-clima-box{justify-self:start}.altitude-product-card{grid-template-columns:1fr}.altitude-product-content h2{font-size:32px}.altitude-product-lead{font-size:18px}.report-grid{grid-template-columns:1fr}}
-    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:14px;padding:16px 16px 20px}.brand-lockup img{width:96px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(210px,100%);padding:10px 12px}.hero-clima-title{font-size:13px;margin-bottom:6px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
+    @media (max-width:1100px){.hero{min-height:auto}.hero-inner{padding:20px 20px 28px}.altitude-product-card{grid-template-columns:1fr}.altitude-product-content h2{font-size:32px}.altitude-product-lead{font-size:18px}.report-grid{grid-template-columns:1fr}}
+    @media (max-width:720px){.container{padding:16px 12px 42px}.hero{min-height:auto}.hero-inner{gap:12px;padding:16px 16px 20px}.brand-lockup img{width:96px}.hero-copy p{font-size:16px}.hero-clima-box{width:min(155px,100%);padding:8px 10px}.hero-clima-title{font-size:13px;margin-bottom:4px}.hero-clima-lines,.status-lines,.ruta-lines,.report-lines{gap:6px;font-size:13px;line-height:1.45}.hero-clima-lines.compact div,.status-lines div,.ruta-lines div,.report-lines div{gap:4px}.lead-grid,.report-grid{grid-template-columns:1fr !important}.card{padding:14px}.subcard{padding:12px}.ruta-top{flex-direction:column;align-items:flex-start}.badge{white-space:normal}.route-pill{padding:9px 12px;font-size:13px}}
   </style>
 </head>
 <body>
   <div class="container">
     <section class="hero">
       <div class="hero-inner">
-        <div class="hero-copy">
+        <div class="hero-top">
           <div class="brand-lockup"><img src="/Logo.png" alt="MachuLine" /></div>
-          <p>Entiende la prefila, la fila de compra y la presión real por ruta en Machu Picchu para decidir mejor cuándo llegar y cómo moverte.</p>
+          <div id="clima" class="hero-clima-box">
+            <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
+            <div class="hero-clima-lines compact"><div><span class="icon">☁️</span><strong>Cargando...</strong></div></div>
+          </div>
         </div>
-        <div id="clima" class="hero-clima-box">
-          <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
-          <div class="hero-clima-lines compact"><div><span class="icon">☁️</span><strong>Cargando...</strong></div></div>
+        <div class="hero-copy">
+          <p>Entiende la prefila, la fila de compra y la presión real por ruta en Machu Picchu para decidir mejor cuándo llegar y cómo moverte.</p>
         </div>
       </div>
     </section>
@@ -819,19 +852,14 @@
     <section class="section"><div class="card community-card"><h2>Únete a la comunidad</h2><p>Para resolver dudas.</p><a href="https://chat.whatsapp.com/JZ2ZKWyd8Mn5inDJ91lyqF?mode=gi_t" target="_blank" rel="noopener noreferrer" class="anchor-btn whatsapp-btn">WhatsApp</a></div></section>
 
     <section class="section">
-      <h2>Reportes de referencia</h2>
-      <p class="lead">Estas tarjetas siguen visibles como ejemplo mientras crece la base real de reportes.</p>
+      <h2>Reportes reales recientes</h2>
+      <p class="lead">Las tarjetas de ejemplo se mantienen arriba y debajo irán apareciendo automáticamente los reportes nuevos del público.</p>
       <div class="grid report-grid">
         <div class="card report-card"><img src="/1.png" alt="Reporte visual 1" /><h3>Reporte 1</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>06:40</strong> | Personas <strong>100</strong></div><div>Ruta <strong>Waynapicchu</strong> | Comentario <strong>Fila larga desde temprano y avance lento.</strong></div></div></div>
         <div class="card report-card"><img src="/2.png" alt="Reporte visual 2" /><h3>Reporte 2</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>07:15</strong> | Personas <strong>200</strong></div><div>Ruta <strong>Clásico</strong> | Comentario <strong>Alta presión y mucha gente esperando.</strong></div></div></div>
         <div class="card report-card"><img src="/3.png" alt="Reporte visual 3" /><h3>Reporte 3</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>08:05</strong> | Personas <strong>300</strong></div><div>Ruta <strong>Montaña Machu Picchu</strong> | Comentario <strong>La fila se ve extensa y con poco movimiento.</strong></div></div></div>
       </div>
-    </section>
-
-    <section class="section">
-      <h2>Reportes reales recientes</h2>
-      <p class="lead">Aquí aparecerán automáticamente los reportes reales que suban los usuarios.</p>
-      <div id="reportes-reales" class="grid report-grid">
+      <div id="reportes-reales" class="grid report-grid" style="margin-top:16px;">
         <div class="card"><p>Cargando reportes reales...</p></div>
       </div>
     </section>
