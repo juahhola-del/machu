@@ -284,44 +284,6 @@
       `;
     }
 
-      const badgeColor = severityClass(r.estado_ruta || r.alerta_principal || "");
-      const alertColor = severityClass(r.alerta_principal || "");
-
-      el.innerHTML = `
-        <div class="card route-focus ${badgeColor}">
-          <div class="ruta-top">
-            <div>
-              <div class="eyebrow">Ruta elegida</div>
-              <h2>${fmt(r.route_name)}</h2>
-            </div>
-            <span class="badge ${badgeColor}">${fmt(r.estado_ruta, "Estado")}</span>
-          </div>
-
-          <div class="route-focus-meta">
-            <div class="mini-chip">${routeHintByType(r.tipo_entrada)}</div>
-            <div class="mini-chip ${alertColor}">${fmt(r.alerta_principal)}</div>
-          </div>
-
-          <div class="ruta-lines">
-            <div>Aforo <strong>${fmt(r.aforo)}</strong> | Vendidos <strong>${fmt(r.vendidos)}</strong> | Disponibles <strong>${fmt(r.disponibles)}</strong></div>
-            <div>Ocupación <strong>${fmt(r.pct_ocupacion)}%</strong> | Ritmo <strong>${fmt(r.ritmo_por_hora)}/h</strong> | Horas <strong>${fmt(r.horas_restantes)}</strong></div>
-            <div>Probabilidad <strong>${fmt(r.probabilidad_actual)}%</strong> | Agotamiento <strong>${formatAgotamiento(r.agotamiento_estimado)}</strong></div>
-          </div>
-
-          <div class="grid two-col" style="margin-top:14px;">
-            <div class="subcard">
-              <h4>Resumen para esta ruta</h4>
-              <p>${fmt(r.resumen_ruta)}</p>
-            </div>
-            <div class="subcard">
-              <h4>Qué te conviene hacer</h4>
-              <p>${fmt(r.recomendacion_ruta)}</p>
-            </div>
-          </div>
-        </div>
-      `;
-    }
-
     function syncRouteSelects() {
       ["lead-ruta", "ruta-simulador", "ruta", "plan-ruta"].forEach(id => {
         const el = document.getElementById(id);
