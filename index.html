@@ -127,29 +127,15 @@
 
     async function cargarClima() {
       const el = document.getElementById("clima");
-      try {
-        const url = "https://api.open-meteo.com/v1/forecast?latitude=-13.1631&longitude=-72.5450&current=temperature_2m,relative_humidity_2m,weather_code,rain&timezone=America%2FLima";
-        const res = await fetch(url);
-        if (!res.ok) throw new Error("No se pudo obtener clima");
-        const json = await res.json();
-        const current = json.current || {};
+      el.innerHTML = `
+        <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
+        <div class="hero-clima-lines compact two-cols">
+          <div><span>☁️ Estado actual</span><span>🌡️ --°C</span></div>
+          <div><span>💧 --</span><span>👁️ --</span></div>
 
-        el.innerHTML = `
-          <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
-          <div class="hero-clima-lines compact two-cols">
-            <div><span>☁️ No disponible</span><span>🌡️ —</span></div>
-            <div><span>💧 —</span><span>👁️ —</span></div>
-          </div>
-        `;
-      } catch (err) {
-        console.error("Error clima:", err);
-        el.innerHTML = `
-          <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
-          <div class="hero-clima-lines compact two-cols">
-            <div><span class="icon">☁️</span><strong>No disponible</strong></div>
-          </div>
-        `;
-      }
+          <div class="route-note">${insight}</div>
+        </div>
+      `;
     }
 
     async function cargarEstadoLive() {
@@ -272,8 +258,6 @@
             </div>
             <span class="badge ${badgeColor}">${fmt(r.estado_ruta, "Estado")}</span>
           </div>
-
-          <div class="single-insight ${badgeColor}">${insight}</div>
 
           <div class="ruta-lines route-metrics">
             <div>Aforo <strong>${fmt(r.aforo)}</strong> | Vendidos <strong>${fmt(r.vendidos)}</strong> | Disponibles <strong>${fmt(r.disponibles)}</strong></div>
@@ -736,19 +720,13 @@ window.addEventListener("DOMContentLoaded", async () => {
 .compact-route-select{max-width:420px}
 .compact-route-select select{width:100%}
 .live-dot{color:#ef4444}
-.single-insight{
-  margin:6px 0 12px;
-  font-size:14px;
-  line-height:1.45;
-  padding:10px 14px;
-  border-radius:999px;
-  width:fit-content;
-  max-width:100%;
-}
-.single-insight.green{background:rgba(34,197,94,.12);color:#22c55e}
-.single-insight.orange{background:rgba(250,204,21,.12);color:#facc15}
-.single-insight.red{background:rgba(239,68,68,.12);color:#ef4444}
 .route-metrics{margin-top:6px}
+.route-note{
+  margin-top:10px;
+  font-size:13px;
+  line-height:1.45;
+  color:#94a3b8;
+}
 .report-feed{
   display:grid;
   grid-template-columns:repeat(2,minmax(0,1fr));
@@ -760,7 +738,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 }
 .report-item img{
   width:100%;
-  aspect-ratio: 4 / 3;
+  aspect-ratio: 1 / 1;
   object-fit:cover;
   border-radius:10px;
   margin-bottom:8px;
@@ -771,8 +749,11 @@ window.addEventListener("DOMContentLoaded", async () => {
   font-size:16px;
 }
 @media (max-width:720px){
-  .report-feed{grid-template-columns:1fr}
-  .hero-clima-box{width:min(210px,100%)}
+  .report-feed{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .hero-clima-box{width:min(220px,100%)}
+  .report-item h3{font-size:14px}
+  .report-item .report-lines{font-size:12px;gap:3px}
+  .report-item img{aspect-ratio:1 / 1}
 }
 
 </style>
