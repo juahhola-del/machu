@@ -128,13 +128,37 @@
     async function cargarClima() {
       const el = document.getElementById("clima");
       if (!el) return;
-      el.innerHTML = `
-        <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
-        <div class="hero-clima-lines compact two-cols">
-          <div><span>☁️ No disponible</span><span>🌡️ --°C</span></div>
-          <div><span>💧 --</span><span>👁️ --</span></div>
-        </div>
-      `;
+
+      const renderFallback = () => {
+        el.innerHTML = `
+          <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
+          <div class="hero-clima-lines compact two-cols">
+            <div><span>☁️ No disponible</span><span>🌡️ --°C</span></div>
+            <div><span>💧 --</span><span>👁️ --</span></div>
+          </div>
+        `;
+      };
+
+      try {
+        const res = await fetch("https://klmikzfstasntvgmxsuj.functions.supabase.co/clima-machu", {
+          method: "GET",
+          headers: { "Content-Type": "application/json" }
+        });
+
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const current = await res.json();
+
+        el.innerHTML = `
+          <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
+          <div class="hero-clima-lines compact two-cols">
+            <div><span>☁️ ${fmt(current.estado || "No disponible")}</span><span>🌡️ ${fmt(current.temperatura, "--")}°C</span></div>
+            <div><span>💧 ${fmt(current.humedad || "--")}</span><span>👁️ ${fmt(current.visibilidad || "--")}</span></div>
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error clima:", err);
+        renderFallback();
+      }
     }
 
     async function cargarEstadoLive() {
