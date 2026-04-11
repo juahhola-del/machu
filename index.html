@@ -140,10 +140,7 @@
       };
 
       try {
-        const res = await fetch("https://klmikzfstasntvgmxsuj.functions.supabase.co/clima-machu", {
-          method: "GET",
-          headers: { "Content-Type": "application/json" }
-        });
+        const res = await fetch("https://klmikzfstasntvgmxsuj.functions.supabase.co/clima-machu");
 
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const current = await res.json();
