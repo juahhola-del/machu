@@ -116,16 +116,13 @@
         const json = await res.json();
         const current = json.current || {};
 
-        const estado = climaTextoDesdeCodigo(current.weather_code);
-        const visibilidad = visibilidadDesdeClima(current.weather_code, current.rain || 0);
-
         el.innerHTML = `
           <div class="hero-clima-title"><span>⛰️</span><span>Clima hoy</span></div>
           <div class="hero-clima-lines">
-            <div><span>☁️ Estado</span><strong>${fmt(estado)}</strong></div>
+            <div><span>☁️ Estado</span><strong>${fmt(climaTextoDesdeCodigo(current.weather_code))}</strong></div>
             <div><span>🌡️ Temp</span><strong>${fmt(current.temperature_2m)}°C</strong></div>
             <div><span>💧 Humedad</span><strong>${humedadLabel(current.relative_humidity_2m)}</strong></div>
-            <div><span>👁️ Visibilidad</span><strong>${visibilidad}</strong></div>
+            <div><span>👁️ Visibilidad</span><strong>${visibilidadDesdeClima(current.weather_code, current.rain || 0)}</strong></div>
           </div>
         `;
       } catch (err) {
@@ -220,7 +217,6 @@
       renderSelector();
       renderRutaElegida();
       syncRouteSelects();
-      await cargarAlertas();
     }
 
     function renderSelector() {
@@ -283,72 +279,8 @@
       `;
     }
 
-    async function cargarAlertas() {
-      const el = document.getElementById("alertas");
-      try {
-        const { data, error } = await supabase.from("v_ticket_alerts_active").select("*").limit(20);
-        if (error) throw error;
-
-        if (!data || data.length === 0) {
-          el.innerHTML = `<div class="card"><p>No hay alertas activas por ahora.</p></div>`;
-          return;
-        }
-
-        let filtered = [...data];
-
-        if (currentRouteCode) {
-          const byRoute = filtered.filter(a => String(a.route_code || "") === currentRouteCode);
-          if (byRoute.length > 0) filtered = byRoute;
-        }
-
-        if (currentLiveStatus?.captured_at) {
-          const sameCapture = filtered.filter(a => a.captured_at === currentLiveStatus.captured_at);
-          if (sameCapture.length > 0) filtered = sameCapture;
-        } else if (currentLiveStatus?.snapshot_date) {
-          const sameDate = filtered.filter(a => a.snapshot_date === currentLiveStatus.snapshot_date);
-          if (sameDate.length > 0) filtered = sameDate;
-        }
-
-        const unique = [];
-        const seen = new Set();
-        for (const a of filtered) {
-          const key = `${a.alert_type || ""}-${a.route_code || ""}-${a.title || ""}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            unique.push(a);
-          }
-        }
-
-        const sorted = [...unique].sort((a, b) => {
-          const rank = { red: 0, orange: 1, green: 2 };
-          return rank[severityClass(a.severity)] - rank[severityClass(b.severity)];
-        });
-
-        const finalAlerts = sorted.slice(0, 2);
-
-        if (!finalAlerts.length) {
-          el.innerHTML = `<div class="card"><p>No hay alertas relevantes para esta ruta por ahora.</p></div>`;
-          return;
-        }
-
-        el.innerHTML = finalAlerts.map(a => {
-          const c = severityClass(a.severity);
-          return `
-            <div class="card alert-card ${c}">
-              <div class="alert-title">${fmt(a.title, "Alerta")}</div>
-              <p>${fmt(a.message)}</p>
-              <small>${fmt(a.route_name, "General")}</small>
-            </div>
-          `;
-        }).join("");
-      } catch (err) {
-        console.error("Error cargando alertas:", err);
-        el.innerHTML = `<div class="card"><p>No se pudieron cargar las alertas.</p></div>`;
-      }
-    }
-
     function syncRouteSelects() {
-      ["lead-ruta", "ruta-simulador", "ruta"].forEach(id => {
+      ["lead-ruta", "ruta-simulador", "ruta", "plan-ruta"].forEach(id => {
         const el = document.getElementById(id);
         if (el) el.value = currentRouteCode;
       });
@@ -359,7 +291,6 @@
       renderSelector();
       renderRutaElegida();
       syncRouteSelects();
-      await cargarAlertas();
     }
 
     function irAMuestra() {
@@ -397,6 +328,128 @@
         fechaEl.value = "";
         rutaEl.value = currentRouteCode;
         if (muestraEl) muestraEl.checked = false;
+      }
+    }
+
+    function generarPlan() {
+      const dias = document.getElementById("plan-dias").value;
+      const tipo = document.getElementById("plan-tipo").value;
+      const ruta = document.getElementById("plan-ruta").value;
+      const el = document.getElementById("planificador-resultado");
+
+      const nombreRuta = routeNameFromCode(ruta);
+      let plan = [];
+
+      if (dias === "1") {
+        plan.push("Llega a Cusco lo más temprano posible y evita cargar el día con más actividades.");
+        plan.push("Prioriza una jornada enfocada en compra presencial y organización del traslado.");
+      } else if (dias === "2") {
+        plan.push("Día 1: aclimatación suave en Cusco y descanso temprano.");
+        plan.push("Día 2: compra presencial + Machu Picchu.");
+      } else {
+        plan.push("Día 1: descanso y adaptación.");
+        plan.push("Día 2: actividades livianas en Cusco o Valle Sagrado.");
+        plan.push("Día 3: compra presencial + Machu Picchu.");
+      }
+
+      if (tipo === "activo") {
+        plan.push("Como tu viaje es más activo, puedes asumir caminatas y traslados algo más intensos.");
+      } else {
+        plan.push("Como tu viaje es más relajado, conviene dejar márgenes más amplios y menos presión por horario.");
+      }
+
+      if (ruta === "ruta_3a") {
+        plan.push("Para " + nombreRuta + ", intenta moverte temprano y no confiarte con las horas críticas.");
+      } else if (ruta === "ruta_2a") {
+        plan.push("Para " + nombreRuta + ", revisa volumen general y mantén una alternativa si ves más presión.");
+      } else {
+        plan.push("Para " + nombreRuta + ", úsala como objetivo principal, pero sin perder de vista otras ventanas del día.");
+      }
+
+      el.innerHTML = `
+        <div class="card">
+          <div class="eyebrow">Plan sugerido</div>
+          <h3>${nombreRuta}</h3>
+          ${plan.map(p => `<p>${p}</p>`).join("")}
+        </div>
+      `;
+    }
+
+    async function subirImagen(file) {
+      const ext = file.name.includes(".") ? file.name.split(".").pop() : "jpg";
+      const fileName = `${Date.now()}_${Math.random().toString(36).slice(2)}.${ext}`;
+      const filePath = `public/${fileName}`;
+
+      const { error } = await supabase.storage
+        .from("queue-photos")
+        .upload(filePath, file, { upsert: false });
+
+      if (error) {
+        console.error("Error subiendo imagen:", error);
+        return null;
+      }
+
+      const { data } = supabase.storage
+        .from("queue-photos")
+        .getPublicUrl(filePath);
+
+      return data?.publicUrl || null;
+    }
+
+    async function calcular() {
+      const personas = parseInt(document.getElementById("personas").value || "0", 10);
+      const hora = document.getElementById("hora").value;
+      const ruta = document.getElementById("ruta").value;
+      const notas = document.getElementById("comentario").value || null;
+      const file = document.getElementById("foto")?.files?.[0];
+      const el = document.getElementById("resultado");
+
+      if (!hora) {
+        el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
+        return;
+      }
+
+      let imageUrl = null;
+      if (file) {
+        imageUrl = await subirImagen(file);
+      }
+
+      try {
+        const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
+          p_report_date: new Date().toISOString().slice(0, 10),
+          p_arrival_time: hora,
+          p_people_ahead_estimate: personas,
+          p_desired_route_code: ruta,
+          p_desired_route_name: routeNameFromCode(ruta),
+          p_queue_speed: null,
+          p_notes: notas,
+          p_confidence_score: 80,
+          p_image_url: imageUrl
+        });
+
+        if (error) throw error;
+        const r = data?.[0];
+
+        if (!r) {
+          el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
+          return;
+        }
+
+        const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
+        el.innerHTML = `
+          <div class="card resultado ${color}">
+            <div class="eyebrow">Situación real</div>
+            <h3>${fmt(r.probabilidad_estimada_pct)}% de probabilidad</h3>
+            <p><b>Nivel:</b> ${fmt(r.nivel_probabilidad)}</p>
+            <p><b>Riesgo:</b> ${fmt(r.riesgo_decision)}</p>
+            <p><b>Recomendación:</b> ${fmt(r.recomendacion_texto)}</p>
+            <p><b>Alternativa:</b> ${fmt(r.ruta_alternativa_sugerida)}</p>
+            ${imageUrl ? `<p><b>Foto subida:</b> lista</p>` : ""}
+          </div>
+        `;
+      } catch (err) {
+        console.error("Error calculando probabilidad:", err);
+        el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
       }
     }
 
@@ -455,60 +508,12 @@
       }
     }
 
-    async function calcular() {
-      const personas = parseInt(document.getElementById("personas").value || "0", 10);
-      const hora = document.getElementById("hora").value;
-      const ruta = document.getElementById("ruta").value;
-      const notas = document.getElementById("comentario").value || null;
-      const el = document.getElementById("resultado");
-
-      if (!hora) {
-        el.innerHTML = `<div class="card"><p>Ingresa tu hora de llegada.</p></div>`;
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase.rpc("submit_queue_report_and_get_probability", {
-          p_report_date: new Date().toISOString().slice(0, 10),
-          p_arrival_time: hora,
-          p_people_ahead_estimate: personas,
-          p_desired_route_code: ruta,
-          p_desired_route_name: routeNameFromCode(ruta),
-          p_queue_speed: null,
-          p_notes: notas,
-          p_confidence_score: 80
-        });
-
-        if (error) throw error;
-        const r = data?.[0];
-
-        if (!r) {
-          el.innerHTML = `<div class="card"><p>No se pudo calcular tu probabilidad.</p></div>`;
-          return;
-        }
-
-        const color = severityClass(r.riesgo_decision || r.nivel_probabilidad || "");
-        el.innerHTML = `
-          <div class="card resultado ${color}">
-            <div class="eyebrow">Situación real</div>
-            <h3>${fmt(r.probabilidad_estimada_pct)}% de probabilidad</h3>
-            <p><b>Nivel:</b> ${fmt(r.nivel_probabilidad)}</p>
-            <p><b>Riesgo:</b> ${fmt(r.riesgo_decision)}</p>
-            <p><b>Recomendación:</b> ${fmt(r.recomendacion_texto)}</p>
-            <p><b>Alternativa:</b> ${fmt(r.ruta_alternativa_sugerida)}</p>
-          </div>
-        `;
-      } catch (err) {
-        console.error("Error calculando probabilidad:", err);
-        el.innerHTML = `<div class="card"><p>No se pudo calcular tu situación actual.</p></div>`;
-      }
-    }
-
     window.selectRoute = selectRoute;
     window.irAMuestra = irAMuestra;
     window.capturarLead = capturarLead;
     window.simular = simular;
     window.calcular = calcular;
+    window.generarPlan = generarPlan;
 
     window.addEventListener("DOMContentLoaded", async () => {
       await cargarClima();
@@ -521,17 +526,17 @@
     :root{--bg:#071329;--text:#e5eefc;--muted:#94a3b8;--green:#22c55e;--yellow:#facc15;--red:#ef4444;--line:rgba(255,255,255,.08);--hero-overlay:rgba(7,19,41,.70)}
     *{box-sizing:border-box}
     html{scroll-behavior:smooth}
-    body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--text);background-color:#071329;position:relative;overflow-x:hidden}
-    body::before{content:"";position:fixed;inset:0;background:linear-gradient(var(--hero-overlay),var(--hero-overlay)),url('/hero.png') center top / cover no-repeat;z-index:-2;transform:translateZ(0)}
-    body::after{content:"";position:fixed;inset:0;background:radial-gradient(circle at top right,rgba(34,197,94,.10),transparent 24%),radial-gradient(circle at top left,rgba(250,204,21,.08),transparent 24%);z-index:-1;pointer-events:none}
+    body{margin:0;font-family:Inter,Arial,sans-serif;color:var(--text);background-color:#071329;position:relative;min-height:100vh;overflow-x:hidden}
+    body::before{content:"";position:absolute;inset:0;background:linear-gradient(var(--hero-overlay),var(--hero-overlay)),url('/hero.png') center top / cover no-repeat;z-index:-2}
+    body::after{content:"";position:absolute;inset:0;background:radial-gradient(circle at top right,rgba(34,197,94,.10),transparent 24%),radial-gradient(circle at top left,rgba(250,204,21,.08),transparent 24%);z-index:-1;pointer-events:none}
     .container{max-width:1240px;margin:0 auto;padding:24px 18px 60px}
-    .hero{position:relative;min-height:58vh;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(9,18,36,.26),rgba(9,18,36,.50));backdrop-filter:blur(2px);margin-top:10px;margin-bottom:32px;display:flex;align-items:center;box-shadow:0 22px 60px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06)}
+    .hero{position:relative;min-height:58vh;border-radius:28px;overflow:hidden;background:linear-gradient(180deg,rgba(9,18,36,.26),rgba(9,18,36,.50));margin-top:10px;margin-bottom:32px;display:flex;align-items:center;box-shadow:0 22px 60px rgba(0,0,0,.28);border:1px solid rgba(255,255,255,.06)}
     .hero-inner{width:100%;padding:30px 30px 34px;display:grid;grid-template-columns:minmax(0,1fr) minmax(245px,.42fr);gap:18px;align-items:start}
     .brand-lockup{display:flex;align-items:center;margin-bottom:10px}
     .brand-lockup img{width:126px;height:auto;object-fit:contain;display:block}
     .hero-copy{max-width:720px;align-self:end;padding-top:6px}
     .hero-copy p{color:#dbe7ff;font-size:19px;line-height:1.6;margin:0}
-    .hero-clima-box{align-self:start;justify-self:end;width:min(245px,100%);padding:10px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18);backdrop-filter:blur(2px)}
+    .hero-clima-box{align-self:start;justify-self:end;width:min(245px,100%);padding:10px 12px;border-radius:16px;background:linear-gradient(180deg,rgba(18,28,46,.82),rgba(20,31,50,.82));border:1px solid rgba(255,255,255,.08);box-shadow:0 10px 26px rgba(0,0,0,.18)}
     .hero-clima-title{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px;margin-bottom:8px;color:#dbe7ff}
     .hero-clima-lines,.status-lines,.ruta-lines,.report-lines{display:flex;flex-direction:column;gap:8px;font-size:14px;line-height:1.5}
     .hero-clima-lines div{display:flex;align-items:center;justify-content:space-between;gap:10px;color:#cbd5e1;padding:4px 0;border-bottom:1px solid rgba(255,255,255,.06)}
@@ -543,7 +548,7 @@
     .grid{display:grid;gap:14px}
     .two-col{grid-template-columns:repeat(auto-fit,minmax(280px,1fr))}
     .three-col{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-    .card{background:linear-gradient(180deg,rgba(23,32,51,.96),rgba(30,41,59,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.18);backdrop-filter:blur(2px)}
+    .card{background:linear-gradient(180deg,rgba(23,32,51,.96),rgba(30,41,59,.96));border:1px solid var(--line);border-radius:18px;padding:18px;box-shadow:0 10px 30px rgba(0,0,0,.18)}
     .eyebrow{color:var(--muted);text-transform:uppercase;font-size:12px;letter-spacing:.08em;margin-bottom:8px}
     .status-head,.ruta-top{display:flex;gap:16px;justify-content:space-between;align-items:flex-start;margin-bottom:18px;flex-wrap:wrap}
     .estado-pill,.badge,.mini-chip,.route-pill{display:inline-flex;align-items:center;justify-content:center;border-radius:999px;font-weight:700;font-size:14px}
@@ -557,12 +562,6 @@
     .status-lines div,.ruta-lines div,.report-lines div{color:#cbd5e1;display:flex;flex-wrap:wrap;gap:6px}
     .status-lines strong,.ruta-lines strong,.report-lines strong{color:#22c55e;font-weight:700}
     .subcard{background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px}
-    .alert-grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
-    .alert-card{border-left:4px solid transparent}
-    .alert-card.red{border-left-color:var(--red)}
-    .alert-card.orange{border-left-color:var(--yellow)}
-    .alert-card.green{border-left-color:var(--green)}
-    .alert-title{font-weight:800;margin-bottom:8px}
     .route-selector{display:flex;flex-wrap:wrap;gap:10px;margin-top:12px}
     .route-focus{border-left:4px solid transparent}
     .route-focus.green{border-left-color:var(--green)}
@@ -659,9 +658,17 @@
     </section>
 
     <section class="section">
-      <h2>Alertas de tu ruta</h2>
-      <p class="lead">Señales rápidas según la ruta que elegiste.</p>
-      <div id="alertas" class="alert-grid"><div class="card"><p>Cargando alertas...</p></div></div>
+      <h2>Planificador inteligente</h2>
+      <p class="lead">Te sugerimos cómo organizar tu viaje completo según la ruta y el tipo de viaje.</p>
+      <div class="card">
+        <div class="form-grid">
+          <div><label for="plan-dias">Días en Cusco</label><select id="plan-dias"><option value="1">1 día</option><option value="2">2 días</option><option value="3">3 días</option></select></div>
+          <div><label for="plan-tipo">Tipo de viaje</label><select id="plan-tipo"><option value="activo">Activo</option><option value="relajado">Relajado</option></select></div>
+          <div><label for="plan-ruta">Ruta objetivo</label><select id="plan-ruta"><option value="ruta_3a">Montaña Waynapicchu</option><option value="ruta_2a">Clásico</option><option value="ruta_1a">Montaña Machu Picchu</option><option value="ruta_1b">Terraza Superior</option><option value="ruta_2b">Terraza Inferior</option><option value="ruta_3b">Otra ruta</option></select></div>
+        </div>
+        <button onclick="generarPlan()">Generar plan</button>
+      </div>
+      <div id="planificador-resultado" style="margin-top:14px;"></div>
     </section>
 
     <section class="section" id="simulador-section">
@@ -695,12 +702,15 @@
 
     <section class="section">
       <h2>Ya estoy en la fila</h2>
-      <p class="lead">Ingresa tu situación real para estimar tu probabilidad actual y una alternativa si vas muy justo.</p>
+      <p class="lead">Ingresa tu situación real para estimar tu probabilidad actual y una alternativa si vas muy justo. También puedes subir una foto del estado real.</p>
       <div class="card">
         <div class="form-grid">
           <div><label for="hora">Hora de llegada</label><input type="time" id="hora" /></div>
           <div><label for="personas">Personas delante</label><input type="number" id="personas" placeholder="Ej: 120" /></div>
           <div><label for="ruta">Ruta objetivo</label><select id="ruta"><option value="ruta_3a">Montaña Waynapicchu</option><option value="ruta_2a">Clásico</option><option value="ruta_1a">Montaña Machu Picchu</option><option value="ruta_1b">Terraza Superior</option><option value="ruta_2b">Terraza Inferior</option><option value="ruta_3b">Otra ruta</option></select></div>
+        </div>
+        <div class="form-grid">
+          <div><label for="foto">Foto de la fila</label><input type="file" id="foto" accept="image/*" /></div>
         </div>
         <div style="margin-bottom:12px;"><label for="comentario">Comentario opcional</label><textarea id="comentario" placeholder="Ej: la fila avanza lento, mucha presión en Huayna..."></textarea></div>
         <button onclick="calcular()">Calcular mi situación</button>
@@ -723,7 +733,7 @@
 
     <section class="section">
       <h2>Reportes de la comunidad</h2>
-      <p class="lead">Mientras activamos la subida de imágenes, aquí mostramos ejemplos del tipo de información que podremos reunir desde “Ya estoy en la fila”.</p>
+      <p class="lead">Mientras activamos la subida automática para todos, aquí mostramos ejemplos del tipo de información que podremos reunir desde “Ya estoy en la fila”.</p>
       <div class="grid report-grid">
         <div class="card report-card"><img src="/1.png" alt="Reporte visual 1" /><h3>Reporte 1</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>06:40</strong> | Personas <strong>100</strong></div><div>Ruta <strong>Waynapicchu</strong> | Comentario <strong>Fila larga desde temprano y avance lento.</strong></div></div></div>
         <div class="card report-card"><img src="/2.png" alt="Reporte visual 2" /><h3>Reporte 2</h3><div class="report-lines"><div>Día <strong>Hoy</strong> | Hora <strong>07:15</strong> | Personas <strong>200</strong></div><div>Ruta <strong>Clásico</strong> | Comentario <strong>Alta presión y mucha gente esperando.</strong></div></div></div>
@@ -733,4 +743,3 @@
   </div>
 </body>
 </html>
-
