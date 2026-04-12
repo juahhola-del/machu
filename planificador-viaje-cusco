@@ -1,0 +1,1412 @@
+ <!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Planificador de Viaje Cusco</title>
+  <link rel="icon" type="image/png" href="/Logo.png" />
+  <style>
+    :root{
+      --bg:#071329;
+      --text:#e5eefc;
+      --muted:#94a3b8;
+      --green:#22c55e;
+      --yellow:#facc15;
+      --red:#ef4444;
+      --blue:#38bdf8;
+      --line:rgba(255,255,255,.08);
+      --hero-overlay:rgba(7,19,41,.72);
+      --card:linear-gradient(180deg,rgba(23,32,51,.96),rgba(30,41,59,.96));
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{
+      margin:0;
+      font-family:Inter,Arial,sans-serif;
+      color:var(--text);
+      background-color:var(--bg);
+      position:relative;
+      min-height:100vh;
+      overflow-x:hidden;
+    }
+    body::before{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        linear-gradient(var(--hero-overlay),var(--hero-overlay)),
+        url('/hero.png') center top / cover no-repeat;
+      z-index:-2;
+      transform:translateZ(0);
+    }
+    body::after{
+      content:"";
+      position:fixed; inset:0;
+      background:
+        radial-gradient(circle at top right,rgba(34,197,94,.10),transparent 24%),
+        radial-gradient(circle at top left,rgba(56,189,248,.10),transparent 24%);
+      z-index:-1; pointer-events:none;
+    }
+    .container{max-width:1280px;margin:0 auto;padding:24px 18px 60px}
+    .hero{
+      position:relative;
+      min-height:48vh;
+      border-radius:28px;
+      overflow:hidden;
+      background:linear-gradient(180deg,rgba(9,18,36,.26),rgba(9,18,36,.52));
+      margin-top:10px;
+      margin-bottom:28px;
+      display:flex;
+      align-items:center;
+      box-shadow:0 22px 60px rgba(0,0,0,.28);
+      border:1px solid rgba(255,255,255,.06)
+    }
+    .hero-inner{
+      width:100%;
+      padding:28px 30px 34px;
+      display:grid;
+      grid-template-columns:1.1fr .9fr;
+      gap:22px;
+      align-items:center
+    }
+    .brand-lockup img{width:240px;height:auto;display:block}
+    .hero-copy h1{font-size:42px;line-height:1.05;margin:12px 0 14px}
+    .hero-copy p{color:#dbe7ff;font-size:18px;line-height:1.6;margin:0 0 18px}
+    .hero-actions{display:flex;flex-wrap:wrap;gap:12px}
+    .btn,.btn-secondary{
+      border:none;border-radius:12px;padding:13px 18px;font-weight:800;
+      cursor:pointer;font-family:inherit;text-decoration:none;display:inline-flex;align-items:center;justify-content:center
+    }
+    .btn{background:var(--green);color:#04130a}
+    .btn-secondary{background:rgba(255,255,255,.06);color:var(--text);border:1px solid var(--line)}
+    .hero-gallery{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+    .hero-shot,.tour-card img,.day-photo{width:100%;display:block;object-fit:cover;border-radius:18px}
+    .hero-shot{aspect-ratio:1.15 / 1;background:#172033}
+    .section{margin-top:26px}
+    .section h2{font-size:26px;margin:0 0 14px}
+    .lead{color:var(--muted);margin:0 0 14px;line-height:1.6}
+    .card{
+      background:var(--card);
+      border:1px solid var(--line);
+      border-radius:18px;
+      padding:18px;
+      box-shadow:0 10px 30px rgba(0,0,0,.18)
+    }
+    .eyebrow{
+      color:var(--muted);
+      text-transform:uppercase;
+      font-size:12px;
+      letter-spacing:.08em;
+      margin-bottom:8px
+    }
+    .form-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+    input,select{
+      width:100%;
+      background:#0f172a;color:var(--text);
+      border:1px solid var(--line);
+      border-radius:12px;padding:12px 14px;font-size:15px
+    }
+    .checkbox-grid{
+      display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px;margin-top:4px
+    }
+    .checkbox-item{
+      display:flex;align-items:center;gap:10px;padding:12px 14px;border-radius:12px;
+      border:1px solid var(--line);background:rgba(255,255,255,.03)
+    }
+    .checkbox-item input{width:auto;margin:0}
+    .summary-bar{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px;margin-bottom:14px}
+    .mini-card{
+      background:rgba(255,255,255,.04);
+      border:1px solid var(--line);
+      border-radius:14px;padding:14px
+    }
+    .mini-label{font-size:12px;color:var(--muted);margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em}
+    .mini-value{font-size:22px;font-weight:800}
+    .toolbar{display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;margin-bottom:14px}
+    .toolbar-left,.toolbar-right{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+    .pill{
+      display:inline-flex;align-items:center;justify-content:center;border-radius:999px;padding:8px 12px;
+      font-weight:700;font-size:13px;background:rgba(255,255,255,.05);border:1px solid var(--line)
+    }
+    .pill.green{background:rgba(34,197,94,.14);color:var(--green)}
+    .pill.orange{background:rgba(250,204,21,.12);color:var(--yellow)}
+    .pill.red{background:rgba(239,68,68,.12);color:var(--red)}
+    .pill.blue{background:rgba(56,189,248,.12);color:var(--blue)}
+    .plan-days{display:grid;gap:14px}
+    .day-card{display:grid;grid-template-columns:260px 1fr;gap:16px;align-items:start}
+    .day-photo{aspect-ratio:1.15 / .9;background:#172033}
+    .day-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;flex-wrap:wrap;margin-bottom:12px}
+    .day-title h3{margin:0 0 6px;font-size:22px}
+    .day-title p{margin:0;color:var(--muted)}
+    .day-body{display:grid;gap:12px}
+    .line{color:#cbd5e1;line-height:1.6}
+    .warning,.info-note,.recommendation,.time-box{
+      border-radius:12px;padding:12px 14px;font-size:14px;line-height:1.55
+    }
+    .warning{background:rgba(250,204,21,.10);border:1px solid rgba(250,204,21,.18);color:#fde68a}
+    .info-note{background:rgba(56,189,248,.10);border:1px solid rgba(56,189,248,.18);color:#bae6fd}
+    .recommendation{background:rgba(34,197,94,.08);border:1px solid rgba(34,197,94,.15);color:#dcfce7}
+    .time-box{background:rgba(255,255,255,.04);border:1px solid var(--line);color:#e5eefc}
+    .actions-row{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .selector-card{
+      background:rgba(255,255,255,.03);border:1px solid var(--line);border-radius:14px;padding:14px
+    }
+    .selector-card h4{margin:0 0 10px;font-size:15px}
+    .tour-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+    .tour-card{background:var(--card);border:1px solid var(--line);border-radius:18px;overflow:hidden}
+    .tour-card img{aspect-ratio:1.2 / .8;background:#172033}
+    .tour-card .tour-copy{padding:14px}
+    .tour-card h3{margin:0 0 8px;font-size:18px}
+    .tour-card p{margin:0;color:var(--muted);line-height:1.55}
+    .hidden{display:none}
+    @media (max-width:980px){
+      .hero-inner,.day-card{grid-template-columns:1fr}
+      .summary-bar{grid-template-columns:repeat(2,minmax(0,1fr))}
+    }
+    @media (max-width:720px){
+      .container{padding:16px 12px 40px}
+      .hero-copy h1{font-size:34px}
+      .hero-copy p{font-size:16px}
+      .summary-bar{grid-template-columns:1fr}
+      .hero-gallery{grid-template-columns:1fr 1fr}
+      .mini-value{font-size:20px}
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <section class="hero">
+      <div class="hero-inner">
+        <div class="hero-copy">
+          <div class="brand-lockup"><img src="/Logo.png" alt="MachuLine" /></div>
+          <div class="eyebrow">Planificador inteligente</div>
+          <h1>Arma tu viaje ideal por Cusco, Machu Picchu y alrededores</h1>
+          <p>Genera un itinerario día por día, ajusta actividades y transportes, y mira cómo cambian el tiempo, el costo y las recomendaciones en tiempo real.</p>
+          <div class="hero-actions">
+            <a href="#builder" class="btn">Crear mi plan</a>
+            <a href="#tours" class="btn-secondary">Ver experiencias</a>
+          </div>
+        </div>
+
+        <div class="hero-gallery">
+          <img class="hero-shot" src="/planificador/hero-machu.jpg" alt="Machu Picchu" />
+          <img class="hero-shot" src="/planificador/hero-aguas.jpg" alt="Aguas Calientes" />
+          <img class="hero-shot" src="/planificador/hero-cocalmayo.jpg" alt="Cocalmayo" />
+          <img class="hero-shot" src="/planificador/hero-cusco.jpg" alt="Cusco" />
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="builder">
+      <h2>Configura tu viaje</h2>
+      <p class="lead">Primero definimos días, estilo y presupuesto base. Después armamos un itinerario real con horas de inicio, término, tiempo libre, comidas y recomendaciones.</p>
+
+      <div class="card">
+        <div class="form-grid">
+          <div>
+            <label for="days">Días en Cusco / zona</label>
+            <select id="days">
+              <option value="2">2 días</option>
+              <option value="3" selected>3 días</option>
+              <option value="4">4 días</option>
+              <option value="5">5 días</option>
+              <option value="6">6 días</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="style">Estilo de viaje</label>
+            <select id="style">
+              <option value="activo">Activo</option>
+              <option value="relajado">Relajado</option>
+              <option value="mixto" selected>Mixto</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="budget">Modo base</label>
+            <select id="budget">
+              <option value="economico">Económico</option>
+              <option value="balanceado" selected>Balanceado</option>
+              <option value="premium">Premium</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="arrival">Llegada a Cusco</label>
+            <input type="datetime-local" id="arrival" />
+          </div>
+        </div>
+
+        <div class="eyebrow" style="margin-top:16px;">Qué quieres incluir</div>
+        <div class="checkbox-grid">
+          <label class="checkbox-item"><input type="checkbox" value="machu_picchu" checked /> Machu Picchu</label>
+          <label class="checkbox-item"><input type="checkbox" value="valle_sagrado" checked /> Valle Sagrado</label>
+          <label class="checkbox-item"><input type="checkbox" value="humantay" /> Laguna Humantay</label>
+          <label class="checkbox-item"><input type="checkbox" value="vinicunca" /> Montaña 7 colores</label>
+          <label class="checkbox-item"><input type="checkbox" value="palccoyo" /> Palccoyo</label>
+          <label class="checkbox-item"><input type="checkbox" value="santa_teresa" /> Santa Teresa / Cocalmayo</label>
+          <label class="checkbox-item"><input type="checkbox" value="cusco_city" checked /> Cusco ciudad</label>
+        </div>
+
+        <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+          <button class="btn" onclick="generarPlan()">Generar mi itinerario</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="section hidden" id="result-section">
+      <div class="toolbar">
+        <div class="toolbar-left">
+          <span class="pill blue" id="plan-badge">Plan generado</span>
+          <span class="pill" id="effort-badge">Exigencia media</span>
+        </div>
+        <div class="toolbar-right">
+          <button class="btn-secondary" onclick="undoPlan()">Atrás</button>
+          <button class="btn-secondary" onclick="redoPlan()">Adelante</button>
+        </div>
+      </div>
+
+      <div class="summary-bar">
+        <div class="mini-card">
+          <div class="mini-label">Costo estimado</div>
+          <div class="mini-value" id="summary-cost">US$0</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">Horas de traslado</div>
+          <div class="mini-value" id="summary-transfer">0 h</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">Horas de actividades</div>
+          <div class="mini-value" id="summary-activities">0 h</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">Tiempo libre</div>
+          <div class="mini-value" id="summary-free">0 h</div>
+        </div>
+        <div class="mini-card">
+          <div class="mini-label">Comidas incluidas</div>
+          <div class="mini-value" id="summary-meals">0</div>
+        </div>
+      </div>
+
+      <div id="plan-output" class="plan-days"></div>
+    </section>
+
+    <section class="section" id="tours">
+      <h2>Experiencias que puedes combinar</h2>
+      <p class="lead">Puedes reemplazar estas imágenes por las definitivas. El objetivo es que la página se vea viva desde la primera versión.</p>
+
+      <div class="tour-grid">
+        <div class="tour-card">
+          <img src="/planificador/machu.jpg" alt="Machu Picchu" />
+          <div class="tour-copy">
+            <h3>Machu Picchu</h3>
+            <p>Separado de Aguas Calientes para planificar mejor noche previa, transporte y visita real.</p>
+          </div>
+        </div>
+
+        <div class="tour-card">
+          <img src="/planificador/aguas.jpg" alt="Aguas Calientes" />
+          <div class="tour-copy">
+            <h3>Aguas Calientes</h3>
+            <p>Nodo clave para descanso, termas, comida y acceso más limpio a Machu Picchu.</p>
+          </div>
+        </div>
+
+        <div class="tour-card">
+          <img src="/planificador/valle.jpg" alt="Valle Sagrado" />
+          <div class="tour-copy">
+            <h3>Valle Sagrado</h3>
+            <p>Muy útil para ordenar mejor el viaje antes de Ollantaytambo o Machu Picchu.</p>
+          </div>
+        </div>
+
+        <div class="tour-card">
+          <img src="/planificador/humantay.jpg" alt="Laguna Humantay" />
+          <div class="tour-copy">
+            <h3>Laguna Humantay</h3>
+            <p>Tour exigente, con opción de caminata o apoyo en caballo según el ritmo del viajero.</p>
+          </div>
+        </div>
+
+        <div class="tour-card">
+          <img src="/planificador/vinicunca.jpg" alt="Montaña 7 colores" />
+          <div class="tour-copy">
+            <h3>Montaña 7 colores</h3>
+            <p>Puede hacerse a pie, con caballo o con variantes más cómodas según disponibilidad.</p>
+          </div>
+        </div>
+
+        <div class="tour-card">
+          <img src="/planificador/cocalmayo.jpg" alt="Cocalmayo" />
+          <div class="tour-copy">
+            <h3>Santa Teresa + Cocalmayo</h3>
+            <p>Diferencial real: termas, relax, canopy y posibilidad de noche alternativa en la zona.</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const LOCATIONS = {
+      cusco: { id: "cusco", name: "Cusco" },
+      aguas_calientes: { id: "aguas_calientes", name: "Aguas Calientes" },
+      machu_picchu: { id: "machu_picchu", name: "Machu Picchu" },
+      valle_sagrado: { id: "valle_sagrado", name: "Valle Sagrado" },
+      humantay: { id: "humantay", name: "Laguna Humantay" },
+      vinicunca: { id: "vinicunca", name: "Montaña 7 colores" },
+      palccoyo: { id: "palccoyo", name: "Palccoyo" },
+      santa_teresa: { id: "santa_teresa", name: "Santa Teresa" },
+      cocalmayo: { id: "cocalmayo", name: "Cocalmayo" }
+    };
+
+    const TRANSFERS = {
+      cusco_to_ollantaytambo: {
+        id: "cusco_to_ollantaytambo",
+        label: "Cusco → Ollantaytambo",
+        options: {
+          economico: { label: "Bus / colectivo", durationHours: 2.0, costUsd: 6, note: "Más barato, menos flexible." },
+          balanceado: { label: "Taxi compartido / traslado", durationHours: 1.5, costUsd: 18, note: "Buen balance entre tiempo y costo." },
+          premium: { label: "Traslado privado", durationHours: 1.5, costUsd: 40, note: "Más cómodo y flexible." }
+        }
+      },
+      ollantaytambo_to_aguas: {
+        id: "ollantaytambo_to_aguas",
+        label: "Ollantaytambo → Aguas Calientes",
+        options: {
+          economico: { label: "Tren estándar base", durationHours: 1.7, costUsd: 60, note: "La opción ferroviaria más controlada en costo." },
+          balanceado: { label: "Tren estándar mejor horario", durationHours: 1.7, costUsd: 75, note: "Más margen horario y menos estrés." },
+          premium: { label: "Tren panorámico / superior", durationHours: 1.7, costUsd: 120, note: "Más comodidad, mismo tramo." }
+        }
+      },
+      aguas_to_machu: {
+        id: "aguas_to_machu",
+        label: "Aguas Calientes → Machu Picchu",
+        options: {
+          economico: { label: "Subida caminando", durationHours: 1.5, costUsd: 0, note: "Ahorras dinero, pero exige más energía." },
+          balanceado: { label: "Bus Consettur ida y vuelta", durationHours: 1.0, costUsd: 15, note: "Mejor balance entre tiempo y esfuerzo." },
+          premium: { label: "Bus + margen extra", durationHours: 1.0, costUsd: 15, note: "Mismo bus, más aire en tu jornada." }
+        }
+      },
+      cusco_to_santa_teresa: {
+        id: "cusco_to_santa_teresa",
+        label: "Cusco → Santa Teresa",
+        options: {
+          economico: { label: "Van compartida", durationHours: 5.0, costUsd: 22, note: "Más económico, día más largo." },
+          balanceado: { label: "Transporte turístico", durationHours: 5.0, costUsd: 30, note: "Más estable en logística." },
+          premium: { label: "Traslado privado", durationHours: 4.5, costUsd: 120, note: "Mucho más flexible." }
+        }
+      },
+      santa_teresa_to_cocalmayo: {
+        id: "santa_teresa_to_cocalmayo",
+        label: "Santa Teresa → Cocalmayo",
+        options: {
+          economico: { label: "Caminata", durationHours: 0.7, costUsd: 0, note: "Más ahorro, menos comodidad." },
+          balanceado: { label: "Taxi local", durationHours: 0.3, costUsd: 5, note: "Lo más práctico." },
+          premium: { label: "Taxi privado local", durationHours: 0.3, costUsd: 8, note: "Más flexible." }
+        }
+      }
+    };
+
+    const ACTIVITIES = {
+      acclimatization: {
+        id: "acclimatization",
+        name: "Aclimatación en Cusco",
+        location: "cusco",
+        image: "/planificador/cusco.jpg",
+        effort: "bajo",
+        baseStart: "14:00",
+        baseEnd: "18:30",
+        recommendedMinDay: 1,
+        variants: {
+          economico: {
+            label: "Paseo libre por Cusco",
+            activityHours: 3.5,
+            costUsd: 0,
+            meals: [],
+            note: "Camina suave, hidrátate y evita exigir el cuerpo."
+          },
+          balanceado: {
+            label: "City suave + café / mirador",
+            activityHours: 4.0,
+            costUsd: 12,
+            meals: [],
+            note: "Buena introducción para aclimatar sin cargar el día."
+          },
+          premium: {
+            label: "City cómodo + descanso largo",
+            activityHours: 4.5,
+            costUsd: 20,
+            meals: [],
+            note: "Te deja el día muy ordenado y con menos fricción."
+          }
+        }
+      },
+
+      cusco_city: {
+        id: "cusco_city",
+        name: "Cusco ciudad",
+        location: "cusco",
+        image: "/planificador/cusco.jpg",
+        effort: "bajo",
+        baseStart: "13:00",
+        baseEnd: "18:00",
+        recommendedMinDay: 1,
+        variants: {
+          economico: {
+            label: "Caminata libre",
+            activityHours: 4.0,
+            costUsd: 0,
+            meals: [],
+            note: "Ideal para presupuesto bajo y moverte a tu ritmo."
+          },
+          balanceado: {
+            label: "City tour grupal",
+            activityHours: 5.0,
+            costUsd: 20,
+            meals: [],
+            note: "Te da contexto y orden sin disparar el presupuesto."
+          },
+          premium: {
+            label: "City privado",
+            activityHours: 5.0,
+            costUsd: 45,
+            meals: [],
+            note: "Más comodidad, menos tiempos muertos."
+          }
+        }
+      },
+
+      valle_sagrado: {
+        id: "valle_sagrado",
+        name: "Valle Sagrado",
+        location: "valle_sagrado",
+        image: "/planificador/valle.jpg",
+        effort: "medio",
+        baseStart: "07:30",
+        baseEnd: "18:00",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Tour grupal estándar",
+            activityHours: 10.5,
+            costUsd: 25,
+            meals: ["almuerzo"],
+            note: "Gran relación precio / experiencia."
+          },
+          balanceado: {
+            label: "Tour grupal con mejor ritmo",
+            activityHours: 10.0,
+            costUsd: 32,
+            meals: ["almuerzo"],
+            note: "Menos fricción y mejor distribución del día."
+          },
+          premium: {
+            label: "Tour privado flexible",
+            activityHours: 9.0,
+            costUsd: 95,
+            meals: ["almuerzo"],
+            note: "Más control del tiempo y menos esperas."
+          }
+        }
+      },
+
+      humantay: {
+        id: "humantay",
+        name: "Laguna Humantay",
+        location: "humantay",
+        image: "/planificador/humantay.jpg",
+        effort: "alto",
+        baseStart: "04:30",
+        baseEnd: "17:30",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Caminata",
+            activityHours: 13.0,
+            costUsd: 28,
+            meals: ["desayuno", "almuerzo"],
+            note: "Más económico, más exigente."
+          },
+          balanceado: {
+            label: "Caballo parcial",
+            activityHours: 12.5,
+            costUsd: 42,
+            meals: ["desayuno", "almuerzo"],
+            note: "Menos desgaste, manteniendo el día bien resuelto."
+          },
+          premium: {
+            label: "Privado + apoyo",
+            activityHours: 11.5,
+            costUsd: 95,
+            meals: ["desayuno", "almuerzo"],
+            note: "Más cómodo y con menos fatiga total."
+          }
+        }
+      },
+
+      vinicunca: {
+        id: "vinicunca",
+        name: "Montaña 7 colores",
+        location: "vinicunca",
+        image: "/planificador/vinicunca.jpg",
+        effort: "alto",
+        baseStart: "04:00",
+        baseEnd: "17:30",
+        recommendedMinDay: 3,
+        variants: {
+          economico: {
+            label: "Caminata",
+            activityHours: 13.5,
+            costUsd: 30,
+            meals: ["desayuno", "almuerzo"],
+            note: "La opción más económica, pero la más intensa."
+          },
+          balanceado: {
+            label: "Caballo",
+            activityHours: 13.0,
+            costUsd: 48,
+            meals: ["desayuno", "almuerzo"],
+            note: "Baja el desgaste y mejora el ritmo."
+          },
+          premium: {
+            label: "Variante cómoda / ATV según disponibilidad",
+            activityHours: 12.0,
+            costUsd: 65,
+            meals: ["desayuno", "almuerzo"],
+            note: "Pierdes menos energía y recuperas mejor el día."
+          }
+        }
+      },
+
+      palccoyo: {
+        id: "palccoyo",
+        name: "Palccoyo",
+        location: "palccoyo",
+        image: "/planificador/palccoyo.jpg",
+        effort: "medio",
+        baseStart: "05:00",
+        baseEnd: "16:00",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Tour grupal",
+            activityHours: 11.0,
+            costUsd: 35,
+            meals: ["desayuno", "almuerzo"],
+            note: "Muy buena alternativa a Vinicunca."
+          },
+          balanceado: {
+            label: "Tour cómodo",
+            activityHours: 10.5,
+            costUsd: 42,
+            meals: ["desayuno", "almuerzo"],
+            note: "Más amable en esfuerzo y tiempos."
+          },
+          premium: {
+            label: "Privado",
+            activityHours: 9.5,
+            costUsd: 85,
+            meals: ["desayuno", "almuerzo"],
+            note: "Más control y menos tiempos perdidos."
+          }
+        }
+      },
+
+      aguas_free: {
+        id: "aguas_free",
+        name: "Aguas Calientes libre",
+        location: "aguas_calientes",
+        image: "/planificador/aguas.jpg",
+        effort: "bajo",
+        baseStart: "15:00",
+        baseEnd: "20:00",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Paseo libre",
+            activityHours: 3.0,
+            costUsd: 0,
+            meals: [],
+            note: "Descanso y ajuste del día siguiente."
+          },
+          balanceado: {
+            label: "Paseo + termas",
+            activityHours: 4.0,
+            costUsd: 10,
+            meals: [],
+            note: "Buen bloque de relajo antes o después de Machu Picchu."
+          },
+          premium: {
+            label: "Tarde suave + mejor comida",
+            activityHours: 4.5,
+            costUsd: 25,
+            meals: [],
+            note: "Recuperas mejor energía y disfrutas más la tarde."
+          }
+        }
+      },
+
+      machu_picchu: {
+        id: "machu_picchu",
+        name: "Machu Picchu",
+        location: "machu_picchu",
+        image: "/planificador/machu.jpg",
+        effort: "medio",
+        baseStart: "06:00",
+        baseEnd: "11:00",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Entrada + caminata de acceso económico",
+            activityHours: 6.5,
+            costUsd: 45,
+            meals: [],
+            note: "Ahorra dinero, pero consume más energía y tiempo."
+          },
+          balanceado: {
+            label: "Entrada + bus ida y vuelta",
+            activityHours: 5.5,
+            costUsd: 60,
+            meals: [],
+            note: "La opción más lógica para la mayoría."
+          },
+          premium: {
+            label: "Entrada + bus + más margen de confort",
+            activityHours: 5.0,
+            costUsd: 75,
+            meals: [],
+            note: "Te deja el bloque más ordenado."
+          }
+        }
+      },
+
+      santa_teresa: {
+        id: "santa_teresa",
+        name: "Santa Teresa + Cocalmayo",
+        location: "santa_teresa",
+        image: "/planificador/cocalmayo.jpg",
+        effort: "medio",
+        baseStart: "08:00",
+        baseEnd: "19:00",
+        recommendedMinDay: 2,
+        variants: {
+          economico: {
+            label: "Traslado + termas",
+            activityHours: 11.0,
+            costUsd: 28,
+            meals: [],
+            note: "Gran alternativa económica y relajada."
+          },
+          balanceado: {
+            label: "Traslado + termas + canopy",
+            activityHours: 11.5,
+            costUsd: 48,
+            meals: [],
+            note: "Añades aventura sin romper demasiado el plan."
+          },
+          premium: {
+            label: "Noche cómoda + termas + actividad extra",
+            activityHours: 10.5,
+            costUsd: 95,
+            meals: ["almuerzo"],
+            note: "Muy buena opción para bajar revoluciones después de Machu o antes."
+          }
+        }
+      }
+    };
+
+    const STATE = {
+      history: [],
+      historyIndex: -1,
+      plan: null
+    };
+
+    function selectedMainItems() {
+      return Array.from(document.querySelectorAll('.checkbox-grid input[type="checkbox"]:checked')).map(el => el.value);
+    }
+
+    function getBaseInputs() {
+      return {
+        days: parseInt(document.getElementById("days").value, 10),
+        style: document.getElementById("style").value,
+        budget: document.getElementById("budget").value,
+        arrival: document.getElementById("arrival").value || null,
+        selected: selectedMainItems()
+      };
+    }
+
+    function clone(obj) {
+      return JSON.parse(JSON.stringify(obj));
+    }
+
+    function budgetOrder(budget) {
+      if (budget === "economico") return ["economico", "balanceado", "premium"];
+      if (budget === "premium") return ["premium", "balanceado", "economico"];
+      return ["balanceado", "economico", "premium"];
+    }
+
+    function effortWeight(effort) {
+      return effort === "alto" ? 3 : effort === "medio" ? 2 : 1;
+    }
+
+    function chooseVariant(activity, budget) {
+      const order = budgetOrder(budget);
+      for (const key of order) {
+        if (activity.variants[key]) {
+          return { key, ...activity.variants[key] };
+        }
+      }
+      const firstKey = Object.keys(activity.variants)[0];
+      return { key: firstKey, ...activity.variants[firstKey] };
+    }
+
+    function chooseTransfer(transferId, budget) {
+      const transfer = TRANSFERS[transferId];
+      if (!transfer) return null;
+      const order = budgetOrder(budget);
+      for (const key of order) {
+        if (transfer.options[key]) {
+          return { key, ...transfer.options[key], transferId, transferLabel: transfer.label };
+        }
+      }
+      const firstKey = Object.keys(transfer.options)[0];
+      return { key: firstKey, ...transfer.options[firstKey], transferId, transferLabel: transfer.label };
+    }
+
+    function formatUsd(value) {
+      return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD", maximumFractionDigits: 0 }).format(value);
+    }
+
+    function humanHours(value) {
+      return `${(Math.round(value * 10) / 10).toString().replace(".0", "")} h`;
+    }
+
+    function setTimeWindow(day, start, end) {
+      day.startTime = start;
+      day.endTime = end;
+    }
+
+    function createDay(dayNumber) {
+      return {
+        dayNumber,
+        title: `Día ${dayNumber}`,
+        subtitle: "",
+        image: "/planificador/cusco.jpg",
+        location: "cusco",
+        lodging: "cusco",
+        activityId: null,
+        activityName: "Día flexible",
+        selectedVariantKey: null,
+        selectedVariantLabel: null,
+        selectedTransferId: null,
+        selectedTransferKey: null,
+        selectedTransferLabel: null,
+        transferHours: 0,
+        activityHours: 0,
+        freeHours: 0,
+        costUsd: 0,
+        meals: [],
+        recommendation: "Día flexible para descanso o ajuste de ruta.",
+        warning: "",
+        effort: "bajo",
+        startTime: "09:00",
+        endTime: "18:00"
+      };
+    }
+
+    function buildDayFromActivity(day, activityId, budget, extra = {}) {
+      const activity = ACTIVITIES[activityId];
+      if (!activity) return day;
+      const variant = chooseVariant(activity, budget);
+
+      day.activityId = activity.id;
+      day.activityName = activity.name;
+      day.selectedVariantKey = variant.key;
+      day.selectedVariantLabel = variant.label;
+      day.subtitle = variant.label;
+      day.image = activity.image;
+      day.location = activity.location;
+      day.activityHours = variant.activityHours || 0;
+      day.transferHours = extra.transferHours || 0;
+      day.costUsd = (variant.costUsd || 0) + (extra.transferCostUsd || 0);
+      day.meals = variant.meals || [];
+      day.effort = activity.effort;
+      day.recommendation = buildRecommendation(activity, variant, extra);
+      day.warning = buildWarning(activity, variant, day.dayNumber, extra.style, extra);
+      day.selectedTransferId = extra.transferId || null;
+      day.selectedTransferKey = extra.transferKey || null;
+      day.selectedTransferLabel = extra.transferLabel || null;
+      day.lodging = extra.lodging || day.location;
+      setTimeWindow(day, extra.startTime || activity.baseStart, extra.endTime || activity.baseEnd);
+
+      const totalUsed = day.activityHours + day.transferHours;
+      day.freeHours = Math.max(0, 14 - totalUsed);
+
+      return day;
+    }
+
+    function buildRecommendation(activity, variant, extra) {
+      const bits = [variant.note];
+      if (extra.transferLabel) bits.push(`Traslado: ${extra.transferLabel}.`);
+      if (extra.transferNote) bits.push(extra.transferNote);
+      if ((variant.meals || []).length) {
+        bits.push(`Incluye ${variant.meals.join(", ")}.`);
+      } else {
+        bits.push("No incluye comida, así que conviene llevar snack o presupuesto para ese bloque.");
+      }
+      if (extra.lodging && LOCATIONS[extra.lodging]) {
+        bits.push(`Noche recomendada en ${LOCATIONS[extra.lodging].name}.`);
+      }
+      return bits.join(" ");
+    }
+
+    function buildWarning(activity, variant, dayNumber, style, extra) {
+      const warnings = [];
+      if (dayNumber === 1 && ["humantay", "vinicunca", "palccoyo"].includes(activity.id)) {
+        warnings.push("No conviene poner altura fuerte el primer día.");
+      }
+      if (style === "relajado" && activity.effort === "alto") {
+        warnings.push("Se siente intenso para un viaje relajado.");
+      }
+      if (!(variant.meals || []).length) {
+        warnings.push("No incluye comida.");
+      }
+      if ((extra.transferHours || 0) >= 5) {
+        warnings.push("El traslado es largo y te quita tiempo útil.");
+      }
+      return warnings.join(" ");
+    }
+
+    function createArrivalDay(day, inputs) {
+      const arrivalHour = inputs.arrival ? new Date(inputs.arrival).getHours() : 12;
+      const budget = inputs.budget;
+      const variant = ACTIVITIES.acclimatization.variants[budget];
+
+      day.activityId = "acclimatization";
+      day.activityName = "Aclimatación en Cusco";
+      day.selectedVariantKey = budget;
+      day.selectedVariantLabel = variant.label;
+      day.subtitle = variant.label;
+      day.image = ACTIVITIES.acclimatization.image;
+      day.location = "cusco";
+      day.lodging = "cusco";
+      day.activityHours = variant.activityHours;
+      day.transferHours = 0.5;
+      day.costUsd = variant.costUsd;
+      day.meals = [];
+      day.effort = "bajo";
+      day.startTime = arrivalHour >= 15 ? "16:00" : "14:00";
+      day.endTime = "20:00";
+      day.freeHours = Math.max(0, 14 - (day.activityHours + day.transferHours));
+      day.recommendation = `${variant.note} Primer día ideal para caminar suave, hidratarte y dormir temprano.`;
+      day.warning = "Evita tours de altura este día.";
+      return day;
+    }
+
+    function buildInitialBlocks(inputs) {
+      const days = Array.from({ length: inputs.days }, (_, idx) => createDay(idx + 1));
+      if (days.length) {
+        createArrivalDay(days[0], inputs);
+      }
+
+      const selected = new Set(inputs.selected);
+
+      if (selected.has("machu_picchu")) {
+        if (inputs.days >= 2) {
+          const transfer1 = chooseTransfer("cusco_to_ollantaytambo", inputs.budget);
+          const transfer2 = chooseTransfer("ollantaytambo_to_aguas", inputs.budget);
+          buildDayFromActivity(days[1], "aguas_free", inputs.budget, {
+            style: inputs.style,
+            transferId: "cusco_to_ollantaytambo",
+            transferKey: transfer1.key,
+            transferLabel: `${transfer1.transferLabel} • ${transfer1.label}`,
+            transferHours: transfer1.durationHours + transfer2.durationHours,
+            transferCostUsd: transfer1.costUsd + transfer2.costUsd,
+            transferNote: `${transfer1.note} Luego conectas con ${transfer2.label}.`,
+            lodging: "aguas_calientes",
+            startTime: "07:00",
+            endTime: "20:00"
+          });
+        }
+
+        if (inputs.days >= 3) {
+          const transfer3 = chooseTransfer("aguas_to_machu", inputs.budget);
+          buildDayFromActivity(days[2], "machu_picchu", inputs.budget, {
+            style: inputs.style,
+            transferId: "aguas_to_machu",
+            transferKey: transfer3.key,
+            transferLabel: `${transfer3.transferLabel} • ${transfer3.label}`,
+            transferHours: transfer3.durationHours,
+            transferCostUsd: transfer3.costUsd,
+            transferNote: transfer3.note,
+            lodging: "cusco",
+            startTime: "05:30",
+            endTime: "17:00"
+          });
+        }
+      }
+
+      if (selected.has("valle_sagrado")) {
+        const slot = findFreeDayIndex(days, 1);
+        if (slot !== -1) {
+          buildDayFromActivity(days[slot], "valle_sagrado", inputs.budget, {
+            style: inputs.style,
+            lodging: "cusco"
+          });
+        }
+      }
+
+      if (selected.has("humantay")) {
+        const slot = findFreeDayIndex(days, 1);
+        if (slot !== -1) {
+          buildDayFromActivity(days[slot], "humantay", inputs.budget, {
+            style: inputs.style,
+            lodging: "cusco"
+          });
+        }
+      }
+
+      if (selected.has("vinicunca")) {
+        const slot = findFreeDayIndex(days, 2);
+        if (slot !== -1) {
+          buildDayFromActivity(days[slot], "vinicunca", inputs.budget, {
+            style: inputs.style,
+            lodging: "cusco"
+          });
+        }
+      }
+
+      if (selected.has("palccoyo")) {
+        const slot = findFreeDayIndex(days, 1);
+        if (slot !== -1) {
+          buildDayFromActivity(days[slot], "palccoyo", inputs.budget, {
+            style: inputs.style,
+            lodging: "cusco"
+          });
+        }
+      }
+
+      if (selected.has("santa_teresa")) {
+        const slot = findFreeDayIndex(days, 1);
+        if (slot !== -1) {
+          const transfer = chooseTransfer("cusco_to_santa_teresa", inputs.budget);
+          const local = chooseTransfer("santa_teresa_to_cocalmayo", inputs.budget);
+          buildDayFromActivity(days[slot], "santa_teresa", inputs.budget, {
+            style: inputs.style,
+            transferId: "cusco_to_santa_teresa",
+            transferKey: transfer.key,
+            transferLabel: `${transfer.transferLabel} • ${transfer.label}`,
+            transferHours: transfer.durationHours + local.durationHours,
+            transferCostUsd: transfer.costUsd + local.costUsd,
+            transferNote: `${transfer.note} Luego conectas con ${local.label}.`,
+            lodging: "santa_teresa",
+            startTime: "08:00",
+            endTime: "20:00"
+          });
+        }
+      }
+
+      if (selected.has("cusco_city")) {
+        const slot = findFreeDayIndex(days, 0);
+        if (slot !== -1) {
+          buildDayFromActivity(days[slot], "cusco_city", inputs.budget, {
+            style: inputs.style,
+            lodging: "cusco"
+          });
+        }
+      }
+
+      finalizeFlexibleDays(days);
+      return days;
+    }
+
+    function findFreeDayIndex(days, startIndex) {
+      for (let i = startIndex; i < days.length; i++) {
+        if (!days[i].activityId) return i;
+      }
+      return -1;
+    }
+
+    function finalizeFlexibleDays(days) {
+      for (const day of days) {
+        if (!day.activityId) {
+          day.activityId = "free";
+          day.activityName = "Día flexible";
+          day.subtitle = "Descanso / ajuste libre";
+          day.image = "/planificador/cusco.jpg";
+          day.location = "cusco";
+          day.lodging = "cusco";
+          day.activityHours = 2;
+          day.transferHours = 0;
+          day.costUsd = 0;
+          day.meals = [];
+          day.effort = "bajo";
+          day.startTime = "10:00";
+          day.endTime = "18:00";
+          day.freeHours = 12;
+          day.recommendation = "Úsalo para descansar, mover actividades o sumar una experiencia suave.";
+          day.warning = "";
+        }
+      }
+    }
+
+    function createPlan() {
+      const inputs = getBaseInputs();
+      const days = buildInitialBlocks(inputs);
+      return { meta: inputs, days };
+    }
+
+    function saveHistory(plan) {
+      const snapshot = clone(plan);
+      STATE.history = STATE.history.slice(0, STATE.historyIndex + 1);
+      STATE.history.push(snapshot);
+      STATE.historyIndex = STATE.history.length - 1;
+      STATE.plan = snapshot;
+    }
+
+    function computeSummary(plan) {
+      let totalCost = 0;
+      let totalTransfer = 0;
+      let totalActivity = 0;
+      let totalFree = 0;
+      let totalMeals = 0;
+
+      for (const day of plan.days) {
+        totalCost += day.costUsd || 0;
+        totalTransfer += day.transferHours || 0;
+        totalActivity += day.activityHours || 0;
+        totalFree += day.freeHours || 0;
+        totalMeals += (day.meals || []).length;
+      }
+
+      return { totalCost, totalTransfer, totalActivity, totalFree, totalMeals };
+    }
+
+    function planEffort(plan) {
+      const weights = plan.days.map(d => effortWeight(d.effort || "bajo"));
+      const avg = weights.length ? weights.reduce((a, b) => a + b, 0) / weights.length : 1;
+      if (avg >= 2.5) return { label: "Exigencia alta", cls: "red" };
+      if (avg >= 1.8) return { label: "Exigencia media", cls: "orange" };
+      return { label: "Exigencia suave", cls: "green" };
+    }
+
+    function renderDay(day) {
+      const activityOptions = [
+        { id: "free", name: "Día flexible" },
+        ...Object.values(ACTIVITIES)
+          .filter(a => a.id !== "acclimatization")
+          .map(a => ({ id: a.id, name: a.name }))
+      ].map(a => `<option value="${a.id}" ${day.activityId === a.id ? "selected" : ""}>${a.name}</option>`).join("");
+
+      let variantOptions = `<option value="">Sin variantes</option>`;
+      if (ACTIVITIES[day.activityId]) {
+        variantOptions = Object.entries(ACTIVITIES[day.activityId].variants || {}).map(([key, value]) => {
+          const impact = ` • ${formatUsd(value.costUsd)} • ${humanHours(value.activityHours)}`;
+          return `<option value="${key}" ${day.selectedVariantKey === key ? "selected" : ""}>${value.label}${impact}</option>`;
+        }).join("");
+      }
+
+      let transferOptions = `<option value="">Sin traslado editable</option>`;
+      if (day.selectedTransferId && TRANSFERS[day.selectedTransferId]) {
+        transferOptions = Object.entries(TRANSFERS[day.selectedTransferId].options).map(([key, value]) => {
+          const impact = ` • ${formatUsd(value.costUsd)} • ${humanHours(value.durationHours)}`;
+          return `<option value="${key}" ${day.selectedTransferKey === key ? "selected" : ""}>${value.label}${impact}</option>`;
+        }).join("");
+      }
+
+      const mealText = day.meals && day.meals.length ? day.meals.join(", ") : "No incluidas";
+      const effortClass = day.effort === "alto" ? "red" : day.effort === "medio" ? "orange" : "green";
+      const locationName = LOCATIONS[day.location]?.name || day.location;
+      const lodgingName = LOCATIONS[day.lodging]?.name || day.lodging;
+
+      return `
+        <div class="card day-card">
+          <div>
+            <img class="day-photo" src="${day.image}" alt="${day.activityName}" />
+          </div>
+
+          <div class="day-body">
+            <div class="day-head">
+              <div class="day-title">
+                <div class="eyebrow">Itinerario</div>
+                <h3>${day.title}: ${day.activityName}</h3>
+                <p>${day.subtitle || "Sin variante definida"} • ${locationName}</p>
+              </div>
+              <span class="pill ${effortClass}">${day.effort}</span>
+            </div>
+
+            <div class="time-box">
+              <b>Inicio:</b> ${day.startTime} • <b>Término:</b> ${day.endTime} •
+              <b>Horas de traslado:</b> ${humanHours(day.transferHours || 0)} •
+              <b>Horas libres:</b> ${humanHours(day.freeHours || 0)}
+            </div>
+
+            <div class="line"><b>Costo estimado del día:</b> ${formatUsd(day.costUsd || 0)} • <b>Comidas incluidas:</b> ${mealText} • <b>Noche sugerida:</b> ${lodgingName}</div>
+
+            ${day.selectedTransferLabel ? `<div class="info-note"><b>Traslado actual:</b> ${day.selectedTransferLabel}</div>` : ""}
+            <div class="recommendation">${day.recommendation || "Sin recomendación."}</div>
+            ${day.warning ? `<div class="warning">${day.warning}</div>` : ""}
+
+            <div class="actions-row">
+              <div class="selector-card">
+                <h4>Cambiar actividad</h4>
+                <select data-swap-activity data-day="${day.dayNumber}">
+                  ${activityOptions}
+                </select>
+              </div>
+
+              <div class="selector-card">
+                <h4>Cambiar variante (valor y tiempo)</h4>
+                <select data-change-variant data-day="${day.dayNumber}">
+                  ${variantOptions}
+                </select>
+              </div>
+
+              <div class="selector-card">
+                <h4>Cambiar transporte (valor y tiempo)</h4>
+                <select data-change-transfer data-day="${day.dayNumber}">
+                  ${transferOptions}
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+      `;
+    }
+
+    function renderPlan(plan) {
+      document.getElementById("result-section").classList.remove("hidden");
+
+      const summary = computeSummary(plan);
+      document.getElementById("summary-cost").textContent = formatUsd(summary.totalCost);
+      document.getElementById("summary-transfer").textContent = humanHours(summary.totalTransfer);
+      document.getElementById("summary-activities").textContent = humanHours(summary.totalActivity);
+      document.getElementById("summary-free").textContent = humanHours(summary.totalFree);
+      document.getElementById("summary-meals").textContent = String(summary.totalMeals);
+
+      const effort = planEffort(plan);
+      const effortBadge = document.getElementById("effort-badge");
+      effortBadge.textContent = effort.label;
+      effortBadge.className = `pill ${effort.cls}`;
+
+      const badge = document.getElementById("plan-badge");
+      badge.textContent = `Plan ${plan.meta.budget} • ${plan.meta.style} • ${plan.meta.days} días`;
+      badge.className = "pill blue";
+
+      const output = document.getElementById("plan-output");
+      output.innerHTML = plan.days.map(day => renderDay(day)).join("");
+
+      output.querySelectorAll("[data-change-variant]").forEach(el => {
+        el.addEventListener("change", (e) => updateDayVariant(parseInt(e.target.dataset.day, 10), e.target.value));
+      });
+
+      output.querySelectorAll("[data-change-transfer]").forEach(el => {
+        el.addEventListener("change", (e) => updateDayTransfer(parseInt(e.target.dataset.day, 10), e.target.value));
+      });
+
+      output.querySelectorAll("[data-swap-activity]").forEach(el => {
+        el.addEventListener("change", (e) => updateDayActivity(parseInt(e.target.dataset.day, 10), e.target.value));
+      });
+    }
+
+    function applyVariantToDay(day, activityId, variantKey, style) {
+      if (activityId === "free" || !ACTIVITIES[activityId]) {
+        day.activityId = "free";
+        day.activityName = "Día flexible";
+        day.subtitle = "Descanso / ajuste libre";
+        day.image = "/planificador/cusco.jpg";
+        day.location = "cusco";
+        day.lodging = "cusco";
+        day.selectedVariantKey = null;
+        day.selectedVariantLabel = null;
+        day.selectedTransferId = null;
+        day.selectedTransferKey = null;
+        day.selectedTransferLabel = null;
+        day.transferHours = 0;
+        day.activityHours = 2;
+        day.costUsd = 0;
+        day.meals = [];
+        day.effort = "bajo";
+        day.startTime = "10:00";
+        day.endTime = "18:00";
+        day.freeHours = 12;
+        day.recommendation = "Úsalo para mover actividades, descansar o explorar con calma.";
+        day.warning = "";
+        return;
+      }
+
+      const activity = ACTIVITIES[activityId];
+      const variant = activity.variants[variantKey] ? { key: variantKey, ...activity.variants[variantKey] } : chooseVariant(activity, STATE.plan.meta.budget);
+
+      const currentTransfer = day.selectedTransferId && TRANSFERS[day.selectedTransferId]
+        ? TRANSFERS[day.selectedTransferId].options[day.selectedTransferKey || STATE.plan.meta.budget]
+        : null;
+
+      day.activityId = activity.id;
+      day.activityName = activity.name;
+      day.subtitle = variant.label;
+      day.image = activity.image;
+      day.location = activity.location;
+      day.selectedVariantKey = variant.key;
+      day.selectedVariantLabel = variant.label;
+      day.activityHours = variant.activityHours || 0;
+      day.meals = variant.meals || [];
+      day.effort = activity.effort;
+      day.costUsd = (variant.costUsd || 0) + (currentTransfer?.costUsd || 0);
+      day.transferHours = currentTransfer?.durationHours || 0;
+      day.freeHours = Math.max(0, 14 - (day.activityHours + day.transferHours));
+      day.recommendation = buildRecommendation(activity, variant, {
+        transferLabel: day.selectedTransferLabel,
+        transferNote: currentTransfer?.note,
+        lodging: day.lodging
+      });
+      day.warning = buildWarning(activity, variant, day.dayNumber, style, { transferHours: day.transferHours });
+      day.startTime = activity.baseStart;
+      day.endTime = activity.baseEnd;
+    }
+
+    function applyTransferToDay(day, transferKey, style) {
+      if (!day.selectedTransferId || !TRANSFERS[day.selectedTransferId]) return;
+
+      const transfer = TRANSFERS[day.selectedTransferId];
+      const option = transfer.options[transferKey];
+      if (!option) return;
+
+      day.selectedTransferKey = transferKey;
+      day.selectedTransferLabel = `${transfer.label} • ${option.label}`;
+      day.transferHours = option.durationHours;
+      day.costUsd = recalcDayCost(day, option.costUsd);
+      day.freeHours = Math.max(0, 14 - (day.activityHours + day.transferHours));
+
+      if (ACTIVITIES[day.activityId]) {
+        const activity = ACTIVITIES[day.activityId];
+        const variant = activity.variants[day.selectedVariantKey] ? { key: day.selectedVariantKey, ...activity.variants[day.selectedVariantKey] } : chooseVariant(activity, STATE.plan.meta.budget);
+        day.recommendation = buildRecommendation(activity, variant, {
+          transferLabel: day.selectedTransferLabel,
+          transferNote: option.note,
+          lodging: day.lodging
+        });
+        day.warning = buildWarning(activity, variant, day.dayNumber, style, { transferHours: day.transferHours });
+      }
+    }
+
+    function recalcDayCost(day, newTransferCost) {
+      const activityCost = ACTIVITIES[day.activityId]?.variants?.[day.selectedVariantKey]?.costUsd || 0;
+      return activityCost + (newTransferCost || 0);
+    }
+
+    function rebalancePlan(plan) {
+      for (let i = 0; i < plan.days.length; i++) {
+        const day = plan.days[i];
+        if (!day.warning) day.warning = "";
+      }
+
+      for (let i = 0; i < plan.days.length - 1; i++) {
+        const day = plan.days[i];
+        if (day.transferHours + day.activityHours > 13) {
+          const next = plan.days[i + 1];
+          const extra = "El día anterior quedó pesado. Considera bajar exigencia o salir más tarde.";
+          next.warning = next.warning ? `${next.warning} ${extra}` : extra;
+        }
+      }
+
+      for (let i = 1; i < plan.days.length; i++) {
+        const prev = plan.days[i - 1];
+        const current = plan.days[i];
+        if (prev.lodging === "aguas_calientes" && current.activityId === "machu_picchu") {
+          current.recommendation += " Ya sales desde Aguas Calientes, así que este orden reduce fricción.";
+        }
+      }
+    }
+
+    function updateDayVariant(dayNumber, variantKey) {
+      const plan = clone(STATE.plan);
+      const day = plan.days.find(d => d.dayNumber === dayNumber);
+      if (!day) return;
+      applyVariantToDay(day, day.activityId, variantKey, plan.meta.style);
+      rebalancePlan(plan);
+      saveHistory(plan);
+      renderPlan(plan);
+    }
+
+    function updateDayTransfer(dayNumber, transferKey) {
+      const plan = clone(STATE.plan);
+      const day = plan.days.find(d => d.dayNumber === dayNumber);
+      if (!day) return;
+      applyTransferToDay(day, transferKey, plan.meta.style);
+      rebalancePlan(plan);
+      saveHistory(plan);
+      renderPlan(plan);
+    }
+
+    function inferTransferForActivity(activityId) {
+      if (activityId === "machu_picchu") return "aguas_to_machu";
+      if (activityId === "aguas_free") return "ollantaytambo_to_aguas";
+      if (activityId === "santa_teresa") return "cusco_to_santa_teresa";
+      return null;
+    }
+
+    function inferLodgingForActivity(activityId) {
+      if (activityId === "aguas_free") return "aguas_calientes";
+      if (activityId === "machu_picchu") return "cusco";
+      if (activityId === "santa_teresa") return "santa_teresa";
+      return "cusco";
+    }
+
+    function updateDayActivity(dayNumber, activityId) {
+      const plan = clone(STATE.plan);
+      const day = plan.days.find(d => d.dayNumber === dayNumber);
+      if (!day) return;
+
+      if (activityId === "free") {
+        applyVariantToDay(day, "free", "", plan.meta.style);
+      } else {
+        const activity = ACTIVITIES[activityId];
+        const variant = chooseVariant(activity, plan.meta.budget);
+        day.selectedTransferId = inferTransferForActivity(activityId);
+        day.selectedTransferKey = day.selectedTransferId ? plan.meta.budget : null;
+        if (day.selectedTransferId && TRANSFERS[day.selectedTransferId]) {
+          const transfer = TRANSFERS[day.selectedTransferId];
+          day.selectedTransferLabel = `${transfer.label} • ${transfer.options[plan.meta.budget].label}`;
+        } else {
+          day.selectedTransferLabel = null;
+        }
+        day.lodging = inferLodgingForActivity(activityId);
+        applyVariantToDay(day, activityId, variant.key, plan.meta.style);
+      }
+
+      rebalancePlan(plan);
+      saveHistory(plan);
+      renderPlan(plan);
+    }
+
+    function generarPlan() {
+      const plan = createPlan();
+      rebalancePlan(plan);
+      saveHistory(plan);
+      renderPlan(plan);
+      document.getElementById("result-section").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function undoPlan() {
+      if (STATE.historyIndex <= 0) return;
+      STATE.historyIndex -= 1;
+      STATE.plan = clone(STATE.history[STATE.historyIndex]);
+      renderPlan(STATE.plan);
+    }
+
+    function redoPlan() {
+      if (STATE.historyIndex >= STATE.history.length - 1) return;
+      STATE.historyIndex += 1;
+      STATE.plan = clone(STATE.history[STATE.historyIndex]);
+      renderPlan(STATE.plan);
+    }
+
+    window.generarPlan = generarPlan;
+    window.undoPlan = undoPlan;
+    window.redoPlan = redoPlan;
+  </script>
+</body>
+</html>
