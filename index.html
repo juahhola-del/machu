@@ -522,7 +522,8 @@
         const { data, error } = await supabase
           .from("v_prefila_engine")
           .select("*")
-          .eq("visit_date", fecha)
+          .gte("visit_date", fecha)
+          .lt("visit_date", fecha + "T23:59:59")
           .eq("route_code", currentRouteCode)
           .maybeSingle();
 
