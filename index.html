@@ -509,7 +509,6 @@
 
     async function simular() {
       const fecha = document.getElementById("fecha").value;
-      const rutaDeseada = document.getElementById("ruta-simulador").value;
       const el = document.getElementById("simulacion");
 
       if (!fecha) {
@@ -518,47 +517,44 @@
       }
 
       try {
-        const { data, error } = await supabase.from("v_visit_date_full_experience").select("*").eq("visit_date", fecha).limit(1);
+        const { data, error } = await supabase
+          .from("v_prefila_engine")
+          .select("*")
+          .eq("visit_date", fecha)
+          .eq("route_code", currentRouteCode)
+          .single();
+
         if (error) throw error;
 
-        const s = data?.[0];
-        if (!s) {
-          el.innerHTML = `<div class="card"><h3>Aún estamos aprendiendo</h3><p>Estamos acumulando datos reales para esta fecha.</p></div>`;
+        if (!data) {
+          el.innerHTML = `<div class="card"><p>Aún no hay estimación para esa fecha.</p></div>`;
           return;
         }
 
-        let horaRecomendada = "—";
-        if (rutaDeseada === "ruta_3a") horaRecomendada = fmt(s.hora_recomendada_huayna);
-        else if (rutaDeseada === "ruta_2a") horaRecomendada = fmt(s.hora_recomendada_clasico);
-        else horaRecomendada = "Aún no disponible para esta ruta";
+        let color = "green";
+        if (data.pressure_label === "alta") color = "orange";
+        if (data.pressure_label === "critica") color = "red";
 
         el.innerHTML = `
-          <div class="card">
-            <div class="eyebrow">Planificación</div>
-            <h3>Tu estrategia para ${fmt(s.visit_date)}</h3>
-            <div class="grid two-col">
-              <div class="subcard">
-                <h4>Prefila y compra</h4>
-                <p><b>Fecha de visita:</b> ${fmt(s.visit_date)}</p>
-                <p><b>Día para comprar presencial:</b> ${fmt(s.purchase_date)}</p>
-                <p><b>Fila de preventa estimada:</b> ${fmt(s.fila_preventa_estimada)}</p>
-                <p><b>Hora recomendada para llegar:</b> ${horaRecomendada}</p>
-                <p><b>Recomendación de preventa:</b> ${fmt(s.recomendacion_preventa)}</p>
-              </div>
-              <div class="subcard">
-                <h4>Clima estimado para tu visita</h4>
-                <p><b>Temperatura promedio:</b> ${fmt(s.avg_temp)}</p>
-                <p><b>Lluvia estimada:</b> ${fmt(s.avg_rain)}</p>
-                <p><b>Nubosidad:</b> ${fmt(s.avg_clouds)}</p>
-                <p><b>Visibilidad:</b> ${fmt(s.visibilidad)}</p>
-                <p><b>Recomendación final:</b> ${fmt(s.recomendacion_final)}</p>
-              </div>
-            </div>
+          <div class="card resultado ${color}">
+            <div class="eyebrow">Estrategia recomendada</div>
+
+            <h3>${routeNameFromCode(data.route_code)}</h3>
+
+            <p><b>Presión esperada:</b> ${data.pressure_label}</p>
+
+            <p><b>Llega entre:</b><br>
+              ${data.arrival_start} - ${data.arrival_end}
+            </p>
+
+            <p style="font-size:13px;color:#94a3b8;margin-top:10px;">
+              Basado en datos reales + temporada (alta demanda en mayo–junio incluida)
+            </p>
           </div>
         `;
       } catch (err) {
         console.error("Error en simulación:", err);
-        el.innerHTML = `<div class="card"><p>No se pudo simular esa fecha.</p></div>`;
+        el.innerHTML = `<div class="card"><p>No se pudo calcular.</p></div>`;
       }
     }
 
@@ -627,8 +623,8 @@
     window.toggleFilaDetalle = toggleFilaDetalle;
 
     let limiteReportes = 3;
-function mostrarMasReportes(){limiteReportes += 3; cargarReportesReales();}
-window.addEventListener("DOMContentLoaded", async () => {
+    function mostrarMasReportes(){limiteReportes += 3; cargarReportesReales();}
+    window.addEventListener("DOMContentLoaded", async () => {
       await cargarClima();
       await cargarEstadoLive();
       await cargarRouteExperience();
@@ -842,7 +838,7 @@ window.addEventListener("DOMContentLoaded", async () => {
 
     <section class="section" id="simulador-section">
       <h2>¿Cuándo llegar a la prefila?</h2>
-      <p class="lead">Elige tu fecha de visita para estimar qué día comprar presencialmente y a qué hora te conviene llegar a la prefila según la ruta elegida arriba.</p>
+      <p class="lead">Elige tu fecha de visita para estimar qué presión habrá en la ruta que seleccionaste arriba y a qué hora te conviene llegar.</p>
       <div class="card">
         <div class="form-grid">
           <div><label for="fecha">Fecha de visita</label><input type="date" id="fecha" /></div>
