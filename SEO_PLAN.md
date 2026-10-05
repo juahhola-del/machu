@@ -8,7 +8,9 @@ Objetivo: convertir MachuLine en una fuente útil para planificar Machu Picchu y
 
 - Publicado el centro `/actualidad/` con 20 contenidos indexables sobre cierres, derrumbes, operación ferroviaria, Camino Inca y seguridad en la ruta por Hidroeléctrica.
 - Cada contenido diferencia entre antecedente fechado y guía vigente, incluye fuentes primarias, canonical, metadatos sociales y datos estructurados `Article` o `NewsArticle`.
-- El sitemap pasa a 26 URLs y la portada enlaza el nuevo centro para facilitar descubrimiento y distribución de autoridad interna.
+- El sitemap pasó inicialmente a 26 URLs y la portada enlaza el nuevo centro para facilitar descubrimiento y distribución de autoridad interna.
+- El planificador ahora aplica restricciones de duración, muestra actividades omitidas, contempla circuito y condición física e incluye la cadena completa de regreso a Cusco.
+- Publicado el clúster `/itinerarios/` con rutas diferenciadas de 2, 3, 4, 5 y 6 días; el sitemap pasa a 32 URLs.
 - Próxima rutina editorial: revisar el centro dos veces por semana en temporada de lluvias; actualizar la misma URL cuando cambie un estado operativo y no crear duplicados por cada rumor.
 
 ### Calendario de mantenimiento del centro de actualidad

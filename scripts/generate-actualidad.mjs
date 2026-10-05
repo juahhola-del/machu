@@ -252,6 +252,8 @@ const base=[
   ['https://machuline.com/guias/como-llegar-machu-picchu','monthly','0.8'],
   ['https://machuline.com/guias/aguas-calientes-santa-teresa','monthly','0.8'],
   ['https://machuline.com/actualidad/','daily','0.9'],
+  ['https://machuline.com/itinerarios/','weekly','0.9'],
+  ...[2,3,4,5,6].map(d=>[`https://machuline.com/itinerarios/cusco-machu-picchu-${d}-dias`,'monthly','0.8']),
   ...articles.map(a=>[`https://machuline.com/actualidad/${a.slug}`,a.type.startsWith('Noticia')?'monthly':'weekly','0.8'])
 ];
 const urls=base.map(([u,f,p])=>`  <url><loc>${u}</loc><lastmod>${updated}</lastmod><changefreq>${f}</changefreq><priority>${p}</priority></url>`).join('\n');

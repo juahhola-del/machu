@@ -260,6 +260,30 @@
             <label for="arrival">Llegada a Cusco</label>
             <input type="datetime-local" id="arrival" />
           </div>
+
+          <div>
+            <label for="departure">Salida de Cusco</label>
+            <input type="datetime-local" id="departure" />
+          </div>
+
+          <div>
+            <label for="circuit">Preferencia en Machu Picchu</label>
+            <select id="circuit">
+              <option value="sin_definir" selected>Aún no tengo entrada</option>
+              <option value="panoramico">Circuito 1 · vistas panorámicas</option>
+              <option value="clasico">Circuito 2 · recorrido clásico</option>
+              <option value="realeza">Circuito 3 · sector inferior / realeza</option>
+            </select>
+          </div>
+
+          <div>
+            <label for="fitness">Condición física</label>
+            <select id="fitness">
+              <option value="baja">Baja / movilidad limitada</option>
+              <option value="media" selected>Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
         </div>
 
         <div class="eyebrow" style="margin-top:16px;">Qué quieres incluir</div>
@@ -313,6 +337,12 @@
           <div class="mini-value" id="summary-meals">0</div>
         </div>
       </div>
+
+      <div class="info-note" style="margin:16px 0;">
+        Los valores son rangos orientativos en USD por persona. Confirma precio, circuito, horario y disponibilidad en los canales oficiales antes de comprar.
+      </div>
+
+      <div id="plan-alerts"></div>
 
       <div id="plan-output" class="plan-days"></div>
     </section>
@@ -410,8 +440,17 @@
         label: "Aguas Calientes → Machu Picchu",
         options: {
           economico: { label: "Subida caminando", durationHours: 1.5, costUsd: 0, note: "Ahorras dinero, pero exige más energía." },
-          balanceado: { label: "Bus Consettur ida y vuelta", durationHours: 1.0, costUsd: 15, note: "Mejor balance entre tiempo y esfuerzo." },
-          premium: { label: "Bus + margen extra", durationHours: 1.0, costUsd: 15, note: "Mismo bus, más aire en tu jornada." }
+          balanceado: { label: "Bus turístico ida y vuelta", durationHours: 1.0, costUsd: 26, note: "Reduce esfuerzo; verifica la tarifa vigente." },
+          premium: { label: "Bus turístico + margen", durationHours: 1.0, costUsd: 26, note: "Mismo servicio, con más margen de tiempo." }
+        }
+      },
+      machu_to_cusco: {
+        id: "machu_to_cusco",
+        label: "Machu Picchu → Aguas Calientes → Ollantaytambo → Cusco",
+        options: {
+          economico: { label: "Bajada a pie + tren base + colectivo", durationHours: 5.8, costUsd: 66, note: "Regreso completo estimado; exige más energía." },
+          balanceado: { label: "Bus + tren estándar + traslado", durationHours: 5.0, costUsd: 99, note: "Incluye la cadena completa de regreso estimada." },
+          premium: { label: "Bus + tren superior + privado", durationHours: 4.8, costUsd: 166, note: "Más comodidad; el horario real depende del tren." }
         }
       },
       cusco_to_santa_teresa: {
@@ -684,23 +723,23 @@
         recommendedMinDay: 2,
         variants: {
           economico: {
-            label: "Entrada + caminata de acceso económico",
-            activityHours: 6.5,
-            costUsd: 45,
+            label: "Entrada estimada + acceso a pie",
+            activityHours: 5.5,
+            costUsd: 42,
             meals: [],
             note: "Ahorra dinero, pero consume más energía y tiempo."
           },
           balanceado: {
-            label: "Entrada + bus ida y vuelta",
-            activityHours: 5.5,
-            costUsd: 60,
+            label: "Entrada estimada (circuito por confirmar)",
+            activityHours: 3.5,
+            costUsd: 48,
             meals: [],
             note: "La opción más lógica para la mayoría."
           },
           premium: {
-            label: "Entrada + bus + más margen de confort",
+            label: "Entrada estimada para ruta ampliada",
             activityHours: 5.0,
-            costUsd: 75,
+            costUsd: 55,
             meals: [],
             note: "Te deja el bloque más ordenado."
           }
@@ -758,6 +797,9 @@
         style: document.getElementById("style").value,
         budget: document.getElementById("budget").value,
         arrival: document.getElementById("arrival").value || null,
+        departure: document.getElementById("departure").value || null,
+        circuit: document.getElementById("circuit").value,
+        fitness: document.getElementById("fitness").value,
         selected: selectedMainItems()
       };
     }
@@ -932,14 +974,49 @@
 
     function buildInitialBlocks(inputs) {
       const days = Array.from({ length: inputs.days }, (_, idx) => createDay(idx + 1));
-      if (days.length) {
-        createArrivalDay(days[0], inputs);
+      const selected = new Set(inputs.selected);
+      const scheduled = new Set();
+      const alerts = [];
+
+      if (days.length) createArrivalDay(days[0], inputs);
+      if (selected.has("cusco_city") && !(selected.has("machu_picchu") && inputs.days === 2)) {
+        scheduled.add("cusco_city");
+        days[0].recommendation += " Integramos una caminata urbana suave; deja los sitios de altura para después.";
       }
 
-      const selected = new Set(inputs.selected);
-
       if (selected.has("machu_picchu")) {
-        if (inputs.days >= 2) {
+        if (inputs.days === 2) {
+          const transfer1 = chooseTransfer("cusco_to_ollantaytambo", inputs.budget);
+          const transfer2 = chooseTransfer("ollantaytambo_to_aguas", inputs.budget);
+          buildDayFromActivity(days[0], "aguas_free", inputs.budget, {
+            style: inputs.style,
+            transferId: "cusco_to_ollantaytambo",
+            transferKey: transfer1.key,
+            transferLabel: `${transfer1.transferLabel} • ${transfer1.label}`,
+            transferHours: transfer1.durationHours + transfer2.durationHours,
+            transferCostUsd: transfer1.costUsd + transfer2.costUsd,
+            transferNote: `${transfer1.note} Luego conectas con ${transfer2.label}.`,
+            lodging: "aguas_calientes",
+            startTime: "06:00",
+            endTime: "20:00"
+          });
+          alerts.push("Con solo 2 días necesitas salir temprano hacia Aguas Calientes el día 1; no hay margen real para aclimatación ni otras excursiones.");
+        } else if (inputs.days >= 3 && selected.has("valle_sagrado")) {
+          const train = chooseTransfer("ollantaytambo_to_aguas", inputs.budget);
+          buildDayFromActivity(days[1], "valle_sagrado", inputs.budget, {
+            style: inputs.style,
+            transferId: "ollantaytambo_to_aguas",
+            transferKey: train.key,
+            transferLabel: `Valle Sagrado → Ollantaytambo → Aguas Calientes • ${train.label}`,
+            transferHours: train.durationHours,
+            transferCostUsd: train.costUsd,
+            transferNote: "El tour debe terminar en Ollantaytambo con margen suficiente para abordar el tren reservado.",
+            lodging: "aguas_calientes",
+            startTime: "07:00",
+            endTime: "20:30"
+          });
+          scheduled.add("valle_sagrado");
+        } else if (inputs.days >= 3) {
           const transfer1 = chooseTransfer("cusco_to_ollantaytambo", inputs.budget);
           const transfer2 = chooseTransfer("ollantaytambo_to_aguas", inputs.budget);
           buildDayFromActivity(days[1], "aguas_free", inputs.budget, {
@@ -956,40 +1033,48 @@
           });
         }
 
-        if (inputs.days >= 3) {
-          const transfer3 = chooseTransfer("aguas_to_machu", inputs.budget);
-          buildDayFromActivity(days[2], "machu_picchu", inputs.budget, {
+        if (inputs.days >= 2) {
+          const visitDay = inputs.days === 2 ? days[1] : days[2];
+          const returnTrip = chooseTransfer("machu_to_cusco", inputs.budget);
+          buildDayFromActivity(visitDay, "machu_picchu", inputs.budget, {
             style: inputs.style,
-            transferId: "aguas_to_machu",
-            transferKey: transfer3.key,
-            transferLabel: `${transfer3.transferLabel} • ${transfer3.label}`,
-            transferHours: transfer3.durationHours,
-            transferCostUsd: transfer3.costUsd,
-            transferNote: transfer3.note,
+            transferId: "machu_to_cusco",
+            transferKey: returnTrip.key,
+            transferLabel: `${returnTrip.transferLabel} • ${returnTrip.label}`,
+            transferHours: returnTrip.durationHours,
+            transferCostUsd: returnTrip.costUsd,
+            transferNote: returnTrip.note,
             lodging: "cusco",
             startTime: "05:30",
-            endTime: "17:00"
+            endTime: "21:00"
           });
+          const circuitText = inputs.circuit === "clasico" ? "Circuito 2 clásico" : inputs.circuit === "panoramico" ? "Circuito 1 panorámico" : inputs.circuit === "realeza" ? "Circuito 3 realeza" : "circuito y horario aún sin definir";
+          visitDay.recommendation += ` Preferencia registrada: ${circuitText}. La reserva oficial determina la ruta y el horario reales.`;
+          if (inputs.circuit === "sin_definir") visitDay.warning = `${visitDay.warning} No compres trenes incompatibles hasta confirmar circuito y hora de ingreso.`.trim();
+          if (inputs.fitness === "baja") visitDay.warning = `${visitDay.warning} Prioriza bus y una ruta compatible con movilidad reducida; confirma accesibilidad antes de reservar.`.trim();
+          scheduled.add("machu_picchu");
         }
       }
 
-      if (selected.has("valle_sagrado")) {
-        const slot = findFreeDayIndex(days, 1);
+      if (selected.has("valle_sagrado") && !scheduled.has("valle_sagrado")) {
+        const slot = findFreeDayIndex(days, selected.has("machu_picchu") ? 3 : 1);
         if (slot !== -1) {
           buildDayFromActivity(days[slot], "valle_sagrado", inputs.budget, {
             style: inputs.style,
             lodging: "cusco"
           });
+          scheduled.add("valle_sagrado");
         }
       }
 
       if (selected.has("humantay")) {
-        const slot = findFreeDayIndex(days, 1);
+        const slot = findFreeDayIndex(days, selected.has("machu_picchu") ? 3 : 1);
         if (slot !== -1) {
           buildDayFromActivity(days[slot], "humantay", inputs.budget, {
             style: inputs.style,
             lodging: "cusco"
           });
+          scheduled.add("humantay");
         }
       }
 
@@ -1000,6 +1085,7 @@
             style: inputs.style,
             lodging: "cusco"
           });
+          scheduled.add("vinicunca");
         }
       }
 
@@ -1010,6 +1096,7 @@
             style: inputs.style,
             lodging: "cusco"
           });
+          scheduled.add("palccoyo");
         }
       }
 
@@ -1030,21 +1117,21 @@
             startTime: "08:00",
             endTime: "20:00"
           });
-        }
-      }
-
-      if (selected.has("cusco_city")) {
-        const slot = findFreeDayIndex(days, 0);
-        if (slot !== -1) {
-          buildDayFromActivity(days[slot], "cusco_city", inputs.budget, {
-            style: inputs.style,
-            lodging: "cusco"
-          });
+          scheduled.add("santa_teresa");
         }
       }
 
       finalizeFlexibleDays(days);
-      return days;
+      const omitted = [...selected].filter(id => !scheduled.has(id));
+      if (omitted.length) {
+        alerts.push(`No caben en ${inputs.days} días: ${omitted.map(id => LOCATIONS[id]?.name || ACTIVITIES[id]?.name || id).join(", ")}. Añade días o elimina actividades; no las ocultamos del resultado.`);
+      }
+      if (inputs.departure) {
+        const departure = new Date(inputs.departure);
+        const endHour = parseInt(days[days.length - 1].endTime.split(":")[0], 10);
+        if (departure.getHours() <= endHour) alerts.push("La hora de salida indicada puede ser incompatible con el último día. Reserva una noche adicional o adelanta el regreso.");
+      }
+      return { days, alerts };
     }
 
     function findFreeDayIndex(days, startIndex) {
@@ -1079,8 +1166,8 @@
 
     function createPlan() {
       const inputs = getBaseInputs();
-      const days = buildInitialBlocks(inputs);
-      return { meta: inputs, days };
+      const built = buildInitialBlocks(inputs);
+      return { meta: inputs, days: built.days, alerts: built.alerts };
     }
 
     function saveHistory(plan) {
@@ -1121,7 +1208,6 @@
       const activityOptions = [
         { id: "free", name: "Día flexible" },
         ...Object.values(ACTIVITIES)
-          .filter(a => a.id !== "acclimatization")
           .map(a => ({ id: a.id, name: a.name }))
       ].map(a => `<option value="${a.id}" ${day.activityId === a.id ? "selected" : ""}>${a.name}</option>`).join("");
 
@@ -1219,6 +1305,9 @@
       const badge = document.getElementById("plan-badge");
       badge.textContent = `Plan ${plan.meta.budget} • ${plan.meta.style} • ${plan.meta.days} días`;
       badge.className = "pill blue";
+
+      const alerts = document.getElementById("plan-alerts");
+      alerts.innerHTML = (plan.alerts || []).map(message => `<div class="warning" style="margin:10px 0;"><b>Revisión necesaria:</b> ${message}</div>`).join("");
 
       const output = document.getElementById("plan-output");
       output.innerHTML = plan.days.map(day => renderDay(day)).join("");
