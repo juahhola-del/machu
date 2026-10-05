@@ -4,6 +4,20 @@ Fecha base: 5 de octubre de 2026
 Dominio canónico: `https://machuline.com`  
 Objetivo: convertir MachuLine en una fuente útil para planificar Machu Picchu y captar búsquedas no asociadas a la marca.
 
+## Estado al 5 de octubre de 2026
+
+- Publicado el centro `/actualidad/` con 20 contenidos indexables sobre cierres, derrumbes, operación ferroviaria, Camino Inca y seguridad en la ruta por Hidroeléctrica.
+- Cada contenido diferencia entre antecedente fechado y guía vigente, incluye fuentes primarias, canonical, metadatos sociales y datos estructurados `Article` o `NewsArticle`.
+- El sitemap pasa a 26 URLs y la portada enlaza el nuevo centro para facilitar descubrimiento y distribución de autoridad interna.
+- Próxima rutina editorial: revisar el centro dos veces por semana en temporada de lluvias; actualizar la misma URL cuando cambie un estado operativo y no crear duplicados por cada rumor.
+
+### Calendario de mantenimiento del centro de actualidad
+
+1. Lunes y jueves: revisar Cultura, Mincetur, MTC, Indeci, Sernanp y Senamhi.
+2. Cuando haya incidencia: publicar solo después de una fuente verificable, indicar fecha/hora y tramo exacto.
+3. Tras la reapertura: actualizar la noticia original, conservar la cronología y enlazar el comunicado de restablecimiento.
+4. Mensualmente: revisar enlaces rotos, títulos con impresiones pero bajo CTR y consultas nuevas en Search Console.
+
 ## Principio de trabajo
 
 MachuLine no debe competir como otra agencia que repite tours. Su ventaja es resolver decisiones que otros sitios dejan fragmentadas: entradas presenciales, presión por ruta, tiempos humanos, elección de base e itinerarios personalizados.
